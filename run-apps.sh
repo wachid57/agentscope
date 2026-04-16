@@ -49,8 +49,8 @@ ensure_env() {
 # ─── Commands ────────────────────────────────────────────────────────────────
 
 cmd_build() {
-    log "Building Docker images..."
-    $COMPOSE build --pull "$@"
+    log "Building Docker images (--progress=plain shows full install output)..."
+    DOCKER_BUILDKIT=1 $COMPOSE build --pull --progress=plain "$@"
 }
 
 cmd_up() {
@@ -123,8 +123,14 @@ cmd_web_dev() {
 
 cmd_web_build() {
     log "Rebuilding web services (backend + frontend)..."
-    $COMPOSE build --pull agentscope-backend agentscope-frontend
+    DOCKER_BUILDKIT=1 $COMPOSE build --pull --progress=plain agentscope-backend agentscope-frontend
     log "Build complete. Run './run-apps.sh web' to start."
+}
+
+cmd_build_core() {
+    log "Rebuilding AgentScope Python core (shows full pip install progress)..."
+    DOCKER_BUILDKIT=1 $COMPOSE build --no-cache --progress=plain agentscope
+    log "Core build complete. Run './run-apps.sh start' to start."
 }
 
 cmd_web_logs() {
@@ -183,6 +189,7 @@ usage() {
     echo "  web-dev           Start backend (Docker) + frontend dev server (hot-reload)"
     echo "  web-build         Rebuild web images only"
     echo "  web-logs          Tail backend + frontend logs"
+    echo "  build-core        Rebuild Python core image with full pip progress output"
     echo ""
     echo -e "${CYAN}Services:${NC}"
     echo "  agentscope        Python AgentScope runtime"
@@ -224,6 +231,7 @@ main() {
         web-dev)      cmd_web_dev ;;
         web-build)    cmd_web_build ;;
         web-logs)     cmd_web_logs ;;
+        build-core)   cmd_build_core ;;
         help|--help|-h|*) usage ;;
     esac
 }
