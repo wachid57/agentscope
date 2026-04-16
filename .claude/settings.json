@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat /data/git-data/agentscope/examples/workflows/multiagent_conversation/*.py)",
+      "Bash(chmod +x /data/git-data/agentscope/run-apps.sh)"
+    ]
+  }
+}

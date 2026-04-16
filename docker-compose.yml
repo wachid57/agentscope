@@ -1,0 +1,64 @@
+services:
+  agentscope:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentscope-app
+    restart: unless-stopped
+    environment:
+      # OpenRouter — satu API key untuk 200+ model
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      # LLM API Keys lainnya (opsional)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      # Tracing / observability (optional)
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+    volumes:
+      # Mount source for live code changes during development
+      - ./src:/app/src
+      - ./examples:/app/examples
+      # Persist logs and outputs
+      - agentscope-data:/app/data
+    networks:
+      - agentscope-net
+
+  # Optional: Redis for memory backend
+  redis:
+    image: redis:7-alpine
+    container_name: agentscope-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - agentscope-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: Jaeger for OpenTelemetry tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: agentscope-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP gRPC
+      - "4318:4318"     # OTLP HTTP
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - agentscope-net
+
+volumes:
+  agentscope-data:
+  redis-data:
+
+networks:
+  agentscope-net:
+    driver: bridge
