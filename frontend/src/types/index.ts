@@ -132,3 +132,22 @@ export interface Overview {
     mem_alloc_mb: number
   }
 }
+
+export type ComponentStatus = 'healthy' | 'degraded' | 'unhealthy' | 'unknown'
+
+export interface ComponentHealth {
+  name: string
+  type: 'backend' | 'core' | 'redis' | 'database'
+  status: ComponentStatus
+  message: string
+  latency_ms: number
+  endpoint: string
+  details?: Record<string, string>
+  checked_at: string
+}
+
+export interface ResourcesResponse {
+  status: ComponentStatus
+  components: ComponentHealth[]
+  checked_at: string
+}

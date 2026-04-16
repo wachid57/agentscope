@@ -5,6 +5,7 @@ import AgentsPage from './pages/AgentsPage'
 import AgentDetailPage from './pages/AgentDetailPage'
 import ChatPage from './pages/ChatPage'
 import ToolsPage from './pages/ToolsPage'
+import ResourcesPage from './pages/ResourcesPage'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="agents/:id" element={<AgentDetailPage />} />
         <Route path="agents/:id/chat" element={<ChatPage />} />
         <Route path="tools" element={<ToolsPage />} />
+        <Route path="system/resources" element={<ResourcesPage />} />
       </Route>
     </Routes>
   )

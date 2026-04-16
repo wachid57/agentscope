@@ -43,10 +43,14 @@ func main() {
 		AllowCredentials: false,
 	}))
 
+	// Config from env
+	redisAddr := getEnv("REDIS_ADDR", "agentscope-redis:6379")
+
 	// Handlers
 	agentH := handlers.NewAgentHandler(s)
 	sessionH := handlers.NewSessionHandler(s, agentscopeURL)
 	systemH := handlers.NewSystemHandler(s)
+	resourcesH := handlers.NewResourcesHandler(s, agentscopeURL, redisAddr, dataDir)
 
 	// Routes
 	app.Get("/health", systemH.Health)
@@ -57,6 +61,7 @@ func main() {
 	api.Get("/overview", systemH.Overview)
 	api.Get("/providers", systemH.ListModelProviders)
 	api.Get("/tools", systemH.ListBuiltinTools)
+	api.Get("/resources", resourcesH.GetResources)
 
 	// Agents
 	agents := api.Group("/agents")
