@@ -1,50 +1,57 @@
 services:
-  # ── AgentScope Python runtime ────────────────────────────────────────────────
+  # ── AgentScope Python core (agent_server.py HTTP server) ────────────────────
   agentscope:
     build:
-      context: .
+      context: ./core
       dockerfile: Dockerfile
     container_name: agentscope-app
     restart: unless-stopped
+    # Run the dynamic agent HTTP server (not just idle)
+    command: python agent_server.py
     environment:
-      # OpenRouter — satu API key untuk 200+ model
+      # AgentScope core server port
+      - AGENT_SERVER_PORT=5001
+      - SESSION_DIR=/app/sessions
+      # LLM API Keys — set in your .env file
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      # LLM API Keys lainnya (opsional)
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       # Tracing / observability (optional)
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     volumes:
       # Mount source for live code changes during development
-      - ./src:/app/src
-      - ./examples:/app/examples
-      # Persist logs and outputs
+      - ./core/src:/app/src
+      - ./core/examples:/app/examples
+      - ./core/agent_server.py:/app/agent_server.py
+      # Persist sessions and data
       - agentscope-data:/app/data
+      - agentscope-sessions:/app/sessions
     networks:
       - agentscope-net
     healthcheck:
-      test: ["CMD", "python", "-c", "import agentscope"]
-      interval: 30s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
+      interval: 20s
       timeout: 10s
-      retries: 3
-      start_period: 10s
+      retries: 5
+      start_period: 15s
 
   # ── Go/Fiber REST API backend ────────────────────────────────────────────────
   agentscope-backend:
     build:
-      context: ./web/backend
+      context: ./backend
       dockerfile: Dockerfile
     container_name: agentscope-backend
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "8088:8080"
     environment:
       - PORT=8080
       - DATA_DIR=/app/data
-      # URL of the Python AgentScope service (for chat proxying)
-      - AGENTSCOPE_URL=http://agentscope:5000
+      # URL of the Python agent_server.py (port 5001 inside Docker network)
+      - AGENTSCOPE_URL=http://agentscope:5001
     volumes:
       - backend-data:/app/data
     networks:
@@ -61,12 +68,12 @@ services:
   # ── React frontend (Nginx) ───────────────────────────────────────────────────
   agentscope-frontend:
     build:
-      context: ./web/frontend
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: agentscope-frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "3030:80"
     networks:
       - agentscope-net
     depends_on:
@@ -105,6 +112,7 @@ services:
 
 volumes:
   agentscope-data:
+  agentscope-sessions:
   redis-data:
   backend-data:
 

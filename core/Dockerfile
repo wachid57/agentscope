@@ -21,13 +21,15 @@ WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY src/ ./src/
 
-# Install agentscope with core dependencies
-RUN pip install -e ".[full]"
+# Install agentscope with core dependencies + web server for agent_server.py
+RUN pip install -e ".[full]" && pip install quart
 
-# Copy examples
+# Copy examples and agent server
 COPY examples/ ./examples/
+COPY agent_server.py ./
 
-# Default working directory for examples
+# Default working directory
 WORKDIR /app
 
-CMD ["python", "-c", "import agentscope; print('AgentScope ready, version:', agentscope.__version__); import signal, time; signal.signal(signal.SIGTERM, lambda *_: exit(0)); [time.sleep(3600) for _ in iter(int, 1)]"]
+# Default: run the dynamic agent HTTP server
+CMD ["python", "agent_server.py"]

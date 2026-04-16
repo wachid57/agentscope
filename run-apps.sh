@@ -58,8 +58,8 @@ cmd_up() {
     $COMPOSE up -d "$@"
     echo ""
     log "Services started:"
-    log "  Frontend  → http://localhost:3000"
-    log "  API       → http://localhost:8080"
+    log "  Frontend  → http://localhost:3030"
+    log "  API       → http://localhost:8088"
     log "  Jaeger UI → http://localhost:16686"
     echo ""
     log "Use './run-apps.sh logs' to tail logs."
@@ -83,8 +83,8 @@ cmd_status() {
     $COMPOSE ps
     echo ""
     echo -e "${CYAN}Access URLs:${NC}"
-    echo "  Frontend  → http://localhost:3000"
-    echo "  API       → http://localhost:8080"
+    echo "  Frontend  → http://localhost:3030"
+    echo "  API       → http://localhost:8088"
     echo "  Jaeger UI → http://localhost:16686"
 }
 
@@ -101,8 +101,8 @@ cmd_web() {
     $COMPOSE up -d agentscope-backend agentscope-frontend
     echo ""
     log "Web UI started:"
-    log "  Frontend → http://localhost:3000"
-    log "  API      → http://localhost:8080/api"
+    log "  Frontend → http://localhost:3030"
+    log "  API      → http://localhost:8088/api"
 }
 
 cmd_web_dev() {
@@ -113,12 +113,12 @@ cmd_web_dev() {
     $COMPOSE up -d agentscope-backend
     echo ""
     # Start frontend locally
-    if [[ ! -d "web/frontend/node_modules" ]]; then
+    if [[ ! -d "frontend/node_modules" ]]; then
         log "Installing frontend dependencies..."
-        (cd web/frontend && npm install)
+        (cd frontend && npm install)
     fi
-    log "Starting React dev server at http://localhost:3000 ..."
-    (cd web/frontend && npm run dev)
+    log "Starting React dev server at http://localhost:3030 ..."
+    (cd frontend && npm run dev)
 }
 
 cmd_web_build() {
@@ -186,8 +186,8 @@ usage() {
     echo ""
     echo -e "${CYAN}Services:${NC}"
     echo "  agentscope        Python AgentScope runtime"
-    echo "  agentscope-backend  Go/Fiber REST API  (port 8080)"
-    echo "  agentscope-frontend React dashboard    (port 3000)"
+    echo "  agentscope-backend  Go/Fiber REST API  (port 8088)"
+    echo "  agentscope-frontend React dashboard    (port 3030)"
     echo "  redis             Redis memory backend"
     echo "  jaeger            Tracing UI           (port 16686)"
     echo ""

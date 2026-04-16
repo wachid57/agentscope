@@ -2,17 +2,24 @@ FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
 
-COPY go.mod ./
-# go.sum is generated automatically; copy if present
-COPY go.su[m] ./
-RUN go mod tidy && go mod download
+# Install git (needed by go mod tidy to fetch deps)
+RUN apk add --no-cache git
 
+# Copy only go.mod first — go.sum will be generated inside the container
+COPY go.mod ./
+
+# Generate go.sum and download all dependencies
+RUN go mod tidy
+
+# Copy the rest of the source
 COPY . .
+
+# Build (go.sum now exists so this will succeed)
 RUN go build -o /bin/server ./cmd/server
 
 FROM alpine:3.19
 
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata wget
 
 WORKDIR /app
 
