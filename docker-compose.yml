@@ -1,4 +1,5 @@
 services:
+  # ── AgentScope Python runtime ────────────────────────────────────────────────
   agentscope:
     build:
       context: .
@@ -23,6 +24,53 @@ services:
       - agentscope-data:/app/data
     networks:
       - agentscope-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import agentscope"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ── Go/Fiber REST API backend ────────────────────────────────────────────────
+  agentscope-backend:
+    build:
+      context: ./web/backend
+      dockerfile: Dockerfile
+    container_name: agentscope-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DATA_DIR=/app/data
+      # URL of the Python AgentScope service (for chat proxying)
+      - AGENTSCOPE_URL=http://agentscope:5000
+    volumes:
+      - backend-data:/app/data
+    networks:
+      - agentscope-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      - agentscope
+
+  # ── React frontend (Nginx) ───────────────────────────────────────────────────
+  agentscope-frontend:
+    build:
+      context: ./web/frontend
+      dockerfile: Dockerfile
+    container_name: agentscope-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    networks:
+      - agentscope-net
+    depends_on:
+      - agentscope-backend
 
   # Optional: Redis for memory backend
   redis:
@@ -58,6 +106,7 @@ services:
 volumes:
   agentscope-data:
   redis-data:
+  backend-data:
 
 networks:
   agentscope-net:

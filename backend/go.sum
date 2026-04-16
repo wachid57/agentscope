@@ -1,0 +1,3 @@
+# This file will be auto-generated when running: go mod tidy
+# Run: docker compose run --rm agentscope-backend go mod tidy
+# Or: cd web/backend && go mod tidy (requires Go 1.21+)

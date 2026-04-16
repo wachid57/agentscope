@@ -30,4 +30,4 @@ COPY examples/ ./examples/
 # Default working directory for examples
 WORKDIR /app
 
-CMD ["python", "-c", "import agentscope; print('AgentScope ready, version:', agentscope.__version__)"]
+CMD ["python", "-c", "import agentscope; print('AgentScope ready, version:', agentscope.__version__); import signal, time; signal.signal(signal.SIGTERM, lambda *_: exit(0)); [time.sleep(3600) for _ in iter(int, 1)]"]

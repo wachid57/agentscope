@@ -1,0 +1,17 @@
+# Development Dockerfile — includes go mod tidy step
+FROM golang:1.21-alpine
+
+WORKDIR /app
+
+# Install air for hot-reload
+RUN go install github.com/air-verse/air@latest
+
+COPY go.mod ./
+# go.sum may not exist yet — download all deps
+RUN go mod download 2>/dev/null || true
+
+COPY . .
+
+EXPOSE 8080
+
+CMD ["air", "-c", ".air.toml"]

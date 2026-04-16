@@ -49,14 +49,20 @@ ensure_env() {
 # ─── Commands ────────────────────────────────────────────────────────────────
 
 cmd_build() {
-    log "Building Docker image..."
+    log "Building Docker images..."
     $COMPOSE build --pull "$@"
 }
 
 cmd_up() {
     log "Starting all services..."
     $COMPOSE up -d "$@"
-    log "Services started. Use './run-apps.sh logs' to tail logs."
+    echo ""
+    log "Services started:"
+    log "  Frontend  → http://localhost:3000"
+    log "  API       → http://localhost:8080"
+    log "  Jaeger UI → http://localhost:16686"
+    echo ""
+    log "Use './run-apps.sh logs' to tail logs."
 }
 
 cmd_down() {
@@ -75,13 +81,58 @@ cmd_logs() {
 
 cmd_status() {
     $COMPOSE ps
+    echo ""
+    echo -e "${CYAN}Access URLs:${NC}"
+    echo "  Frontend  → http://localhost:3000"
+    echo "  API       → http://localhost:8080"
+    echo "  Jaeger UI → http://localhost:16686"
 }
 
 cmd_shell() {
     local service="${1:-agentscope}"
     log "Opening shell in '$service'..."
-    $COMPOSE exec "$service" bash
+    $COMPOSE exec "$service" sh 2>/dev/null || $COMPOSE exec "$service" bash
 }
+
+# ── Web UI ────────────────────────────────────────────────────────────────────
+
+cmd_web() {
+    log "Starting web UI (backend + frontend)..."
+    $COMPOSE up -d agentscope-backend agentscope-frontend
+    echo ""
+    log "Web UI started:"
+    log "  Frontend → http://localhost:3000"
+    log "  API      → http://localhost:8080/api"
+}
+
+cmd_web_dev() {
+    echo -e "${CYAN}Starting frontend in dev mode (hot-reload)...${NC}"
+    echo ""
+    # Start backend via Docker
+    log "Starting backend container..."
+    $COMPOSE up -d agentscope-backend
+    echo ""
+    # Start frontend locally
+    if [[ ! -d "web/frontend/node_modules" ]]; then
+        log "Installing frontend dependencies..."
+        (cd web/frontend && npm install)
+    fi
+    log "Starting React dev server at http://localhost:3000 ..."
+    (cd web/frontend && npm run dev)
+}
+
+cmd_web_build() {
+    log "Rebuilding web services (backend + frontend)..."
+    $COMPOSE build --pull agentscope-backend agentscope-frontend
+    log "Build complete. Run './run-apps.sh web' to start."
+}
+
+cmd_web_logs() {
+    log "Tailing backend + frontend logs..."
+    $COMPOSE logs -f --tail=100 agentscope-backend agentscope-frontend
+}
+
+# ── Examples ──────────────────────────────────────────────────────────────────
 
 cmd_run_example() {
     local example="${1:-}"
@@ -116,22 +167,36 @@ usage() {
     echo ""
     echo "Usage: $0 <command> [args...]"
     echo ""
-    echo "Commands:"
-    echo "  build           Build the Docker image"
-    echo "  up              Start all services (detached)"
-    echo "  down            Stop all services"
-    echo "  restart         Restart services"
-    echo "  logs [svc]      Tail logs (all services or a specific one)"
-    echo "  status          Show running containers"
-    echo "  shell [svc]     Open a bash shell (default: agentscope)"
-    echo "  run-example     List or run a specific example script"
-    echo "  clean           Remove containers, networks, and volumes"
+    echo -e "${CYAN}General:${NC}"
+    echo "  build             Build all Docker images"
+    echo "  up                Start all services (detached)"
+    echo "  down              Stop all services"
+    echo "  restart [svc]     Restart services"
+    echo "  logs [svc]        Tail logs (all or specific service)"
+    echo "  status            Show running containers + access URLs"
+    echo "  shell [svc]       Open a shell (default: agentscope)"
+    echo "  run-example       List or run a specific example script"
+    echo "  clean             Remove containers, networks, and volumes"
     echo ""
-    echo "Examples:"
-    echo "  $0 build"
-    echo "  $0 up"
-    echo "  $0 logs agentscope"
-    echo "  $0 shell agentscope"
+    echo -e "${CYAN}Web UI:${NC}"
+    echo "  web               Start backend + frontend (Docker)"
+    echo "  web-dev           Start backend (Docker) + frontend dev server (hot-reload)"
+    echo "  web-build         Rebuild web images only"
+    echo "  web-logs          Tail backend + frontend logs"
+    echo ""
+    echo -e "${CYAN}Services:${NC}"
+    echo "  agentscope        Python AgentScope runtime"
+    echo "  agentscope-backend  Go/Fiber REST API  (port 8080)"
+    echo "  agentscope-frontend React dashboard    (port 3000)"
+    echo "  redis             Redis memory backend"
+    echo "  jaeger            Tracing UI           (port 16686)"
+    echo ""
+    echo -e "${CYAN}Examples:${NC}"
+    echo "  $0 web                          # start web UI only"
+    echo "  $0 web-dev                      # frontend hot-reload dev mode"
+    echo "  $0 up                           # start everything"
+    echo "  $0 logs agentscope-backend      # tail backend logs"
+    echo "  $0 shell agentscope-backend     # shell into backend container"
     echo "  $0 run-example examples/workflows/multiagent_conversation/main.py"
     echo "  $0 down"
 }
@@ -155,6 +220,10 @@ main() {
         shell|exec)   cmd_shell "$@" ;;
         run-example)  cmd_run_example "$@" ;;
         clean)        cmd_clean ;;
+        web)          cmd_web ;;
+        web-dev)      cmd_web_dev ;;
+        web-build)    cmd_web_build ;;
+        web-logs)     cmd_web_logs ;;
         help|--help|-h|*) usage ;;
     esac
 }
