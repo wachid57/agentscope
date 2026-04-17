@@ -1,25 +1,31 @@
 import { useState, useRef, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { useNavSubtitle } from '../context/NavSubtitle'
 import {
-  LayoutDashboard,
-  Bot,
-  Wrench,
-  Github,
-  ChevronLeft,
-  ChevronRight,
-  Bell,
-  Settings,
-  LogOut,
-  User,
-  ChevronDown,
-  Menu,
-  Zap,
-  MonitorDot,
-  HardDrive,
+  LayoutDashboard, Bot, Wrench, Github, ChevronLeft, ChevronRight,
+  Bell, Settings, LogOut, User, ChevronDown, Menu, Zap,
+  MonitorDot, HardDrive, Sun, Moon,
 } from 'lucide-react'
 import clsx from 'clsx'
 
-// ─── Nav config ───────────────────────────────────────────────────────────────
+// ── Theme ─────────────────────────────────────────────────────────────────────
+
+function useTheme() {
+  const [dark, setDark] = useState(() => {
+    const stored = localStorage.getItem('theme')
+    if (stored) return stored === 'dark'
+    return false // light default
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark)
+    localStorage.setItem('theme', dark ? 'dark' : 'light')
+  }, [dark])
+
+  return { dark, toggle: () => setDark(d => !d) }
+}
+
+// ── Nav config ────────────────────────────────────────────────────────────────
 
 type NavItem =
   | { kind: 'link'; to: string; icon: React.ElementType; label: string }
@@ -27,59 +33,53 @@ type NavItem =
 
 const nav: NavItem[] = [
   { kind: 'link', to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { kind: 'link', to: '/agents', icon: Bot, label: 'Agents' },
-  { kind: 'link', to: '/tools', icon: Wrench, label: 'Tools' },
+  { kind: 'link', to: '/agents',    icon: Bot,             label: 'Agents'    },
+  { kind: 'link', to: '/tools',     icon: Wrench,          label: 'Tools'     },
   {
-    kind: 'group',
-    icon: MonitorDot,
-    label: 'System',
-    key: 'system',
-    children: [
-      { to: '/system/resources', icon: HardDrive, label: 'Resources' },
-    ],
+    kind: 'group', icon: MonitorDot, label: 'System', key: 'system',
+    children: [{ to: '/system/resources', icon: HardDrive, label: 'Resources' }],
   },
 ]
 
-// ─── Page title hook ─────────────────────────────────────────────────────────
+// ── Page title ────────────────────────────────────────────────────────────────
 
-function usePageTitle() {
-  const location = useLocation()
-  const path = location.pathname
-  if (path.startsWith('/agents') && path.includes('/chat')) return { title: 'Chat', icon: Bot }
-  if (path.startsWith('/agents/')) return { title: 'Agent Detail', icon: Bot }
-  if (path.startsWith('/agents')) return { title: 'Agents', icon: Bot }
-  if (path.startsWith('/tools')) return { title: 'Tools', icon: Wrench }
-  if (path.startsWith('/system/resources')) return { title: 'Resources', icon: HardDrive }
-  if (path.startsWith('/dashboard')) return { title: 'Dashboard', icon: LayoutDashboard }
-  return { title: 'AgentScope', icon: Zap }
+function usePageMeta() {
+  const { pathname } = useLocation()
+  if (pathname.includes('/chat'))               return { title: 'Chat',         sub: 'Conversation with agent' }
+  if (pathname.startsWith('/agents/'))          return { title: 'Agent Detail', sub: 'View and manage agent' }
+  if (pathname.startsWith('/agents'))           return { title: 'Agents',       sub: 'Manage your AI agents' }
+  if (pathname.startsWith('/tools'))            return { title: 'Tools',        sub: 'Available tools and integrations' }
+  if (pathname.startsWith('/system/resources')) return { title: 'Resources',    sub: 'System resource usage' }
+  if (pathname.startsWith('/dashboard'))        return { title: 'Dashboard',    sub: 'Monitor your AgentScope deployment in real-time' }
+  return { title: 'AgentScope', sub: '' }
 }
 
-// ─── Sidebar nav link ────────────────────────────────────────────────────────
+// ── Sidebar nav link ──────────────────────────────────────────────────────────
 
-function SideLink({
-  to, icon: Icon, label, collapsed, indent = false,
-}: { to: string; icon: React.ElementType; label: string; collapsed: boolean; indent?: boolean }) {
+function SideLink({ to, icon: Icon, label, collapsed, indent = false }: {
+  to: string; icon: React.ElementType; label: string; collapsed: boolean; indent?: boolean
+}) {
   return (
     <NavLink
       to={to}
       title={collapsed ? label : undefined}
-      className={({ isActive }) =>
-        clsx(
-          'flex items-center gap-3 rounded-lg text-sm font-medium transition-all group relative',
-          indent && !collapsed ? 'pl-8 pr-3 py-1.5' : collapsed ? 'justify-center px-0 py-2.5 mx-1' : 'px-3 py-2',
-          isActive
-            ? 'bg-brand-600/15 text-brand-400 border border-brand-800/40'
-            : 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-100',
-        )
-      }
+      className={({ isActive }) => clsx(
+        'flex items-center gap-2.5 rounded-lg text-sm font-medium transition-all duration-150 group relative',
+        indent && !collapsed ? 'pl-9 pr-3 py-1.5' : collapsed ? 'justify-center p-2.5 mx-0.5' : 'px-3 py-2',
+        isActive
+          ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400'
+          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-slate-200',
+      )}
     >
       {({ isActive }) => (
         <>
-          <Icon size={indent ? 14 : 16} className={clsx('shrink-0', isActive && 'drop-shadow-[0_0_6px_rgba(56,189,248,0.5)]')} />
-          {!collapsed && <span>{label}</span>}
-          {isActive && !collapsed && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-400" />}
+          <Icon size={indent ? 13 : 15} className={clsx('shrink-0', isActive && 'text-brand-600 dark:text-brand-400')} />
+          {!collapsed && <span className="truncate">{label}</span>}
+          {isActive && !collapsed && (
+            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0" />
+          )}
           {collapsed && (
-            <span className="absolute left-full ml-3 px-2 py-1 bg-slate-800 text-slate-100 text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap border border-slate-700 shadow-xl z-50 transition-opacity">
+            <span className="absolute left-full ml-2.5 px-2.5 py-1.5 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap shadow-dropdown z-50 transition-opacity duration-150">
               {label}
             </span>
           )}
@@ -89,65 +89,56 @@ function SideLink({
   )
 }
 
-// ─── Sidebar group (collapsible section) ─────────────────────────────────────
+// ── Sidebar group ─────────────────────────────────────────────────────────────
 
-function SideGroup({
-  item, collapsed, openGroups, toggleGroup,
-}: {
+function SideGroup({ item, collapsed, openGroups, toggleGroup }: {
   item: Extract<NavItem, { kind: 'group' }>
   collapsed: boolean
   openGroups: Set<string>
   toggleGroup: (key: string) => void
 }) {
-  const location = useLocation()
-  const isChildActive = item.children.some(c => location.pathname.startsWith(c.to))
+  const { pathname } = useLocation()
+  const isChildActive = item.children.some(c => pathname.startsWith(c.to))
   const isOpen = openGroups.has(item.key) || isChildActive
 
   return (
     <div>
-      {/* Group header button */}
       <button
         onClick={() => !collapsed && toggleGroup(item.key)}
         title={collapsed ? item.label : undefined}
         className={clsx(
-          'w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-all group relative',
-          collapsed ? 'justify-center px-0 py-2.5 mx-1' : 'px-3 py-2',
+          'w-full flex items-center gap-2.5 rounded-lg text-sm font-medium transition-all duration-150 group relative',
+          collapsed ? 'justify-center p-2.5 mx-0.5' : 'px-3 py-2',
           isChildActive
-            ? 'text-brand-400'
-            : 'text-slate-400 hover:bg-slate-800/80 hover:text-slate-100',
+            ? 'text-brand-600 dark:text-brand-400'
+            : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-slate-200',
         )}
       >
-        <item.icon size={16} className="shrink-0" />
+        <item.icon size={15} className="shrink-0" />
         {!collapsed && (
           <>
             <span className="flex-1 text-left">{item.label}</span>
-            <ChevronDown
-              size={13}
-              className={clsx('text-slate-500 transition-transform', isOpen && 'rotate-180')}
-            />
+            <ChevronDown size={12} className={clsx('text-slate-400 transition-transform duration-200', isOpen && 'rotate-180')} />
           </>
         )}
         {collapsed && (
-          <span className="absolute left-full ml-3 px-2 py-1 bg-slate-800 text-slate-100 text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap border border-slate-700 shadow-xl z-50 transition-opacity">
+          <span className="absolute left-full ml-2.5 px-2.5 py-1.5 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap shadow-dropdown z-50 transition-opacity">
             {item.label}
           </span>
         )}
       </button>
 
-      {/* Children */}
       {!collapsed && isOpen && (
         <div className="mt-0.5 space-y-0.5">
-          {item.children.map(child => (
-            <SideLink key={child.to} to={child.to} icon={child.icon} label={child.label} collapsed={false} indent />
+          {item.children.map(c => (
+            <SideLink key={c.to} to={c.to} icon={c.icon} label={c.label} collapsed={false} indent />
           ))}
         </div>
       )}
-
-      {/* Collapsed: show children directly as icon-only links */}
       {collapsed && (
         <div className="mt-0.5 space-y-0.5">
-          {item.children.map(child => (
-            <SideLink key={child.to} to={child.to} icon={child.icon} label={child.label} collapsed={true} />
+          {item.children.map(c => (
+            <SideLink key={c.to} to={c.to} icon={c.icon} label={c.label} collapsed />
           ))}
         </div>
       )}
@@ -155,7 +146,7 @@ function SideGroup({
   )
 }
 
-// ─── Layout ───────────────────────────────────────────────────────────────────
+// ── Layout ────────────────────────────────────────────────────────────────────
 
 export default function Layout() {
   const [collapsed, setCollapsed] = useState(false)
@@ -163,7 +154,10 @@ export default function Layout() {
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set(['system']))
   const profileRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
-  const pageInfo = usePageTitle()
+  const { title: pageTitle, sub: staticSub } = usePageMeta()
+  const { subtitle: dynSub } = useNavSubtitle()
+  const pageSub = dynSub || staticSub
+  const { dark, toggle: toggleTheme } = useTheme()
 
   const toggleGroup = (key: string) =>
     setOpenGroups(prev => {
@@ -172,80 +166,74 @@ export default function Layout() {
       return next
     })
 
-  // Close profile dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+    const handler = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node))
         setProfileOpen(false)
-      }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
   }, [])
 
   return (
-    <div className="flex h-full">
-      {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
-      <aside
-        className={clsx(
-          'bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 transition-all duration-300 ease-in-out relative',
-          collapsed ? 'w-16' : 'w-60',
-        )}
-      >
+    <div className="flex h-full" style={{ background: 'var(--bg-base)' }}>
+
+      {/* ── Sidebar ───────────────────────────────────────────────────────── */}
+      <aside className={clsx(
+        'flex flex-col shrink-0 transition-all duration-300 ease-in-out relative border-r',
+        collapsed ? 'w-[60px]' : 'w-[220px]',
+      )} style={{ background: 'var(--sidebar-bg)', borderColor: 'var(--sidebar-border)' }}>
+
         {/* Logo */}
-        <div className={clsx('h-16 border-b border-slate-800 flex items-center shrink-0', collapsed ? 'justify-center px-2' : 'px-4')}>
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-brand-900/50">
-              <Zap size={16} />
+        <div className={clsx(
+          'h-14 flex items-center shrink-0 border-b',
+          collapsed ? 'justify-center px-0' : 'px-4',
+        )} style={{ borderColor: 'var(--border)' }}>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-brand-600 flex items-center justify-center text-white shrink-0 shadow-sm">
+              <Zap size={14} />
             </div>
             {!collapsed && (
               <div className="min-w-0">
-                <p className="font-semibold text-slate-100 text-sm leading-none">AgentScope</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">Manager</p>
+                <p className="font-semibold text-sm leading-none" style={{ color: 'var(--text-primary)' }}>AgentScope</p>
+                <p className="text-[10px] mt-0.5 font-medium" style={{ color: 'var(--text-muted)' }}>Manager</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Nav items */}
+        {/* Nav */}
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
           {!collapsed && (
-            <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider px-3 py-2 mt-1">
-              Navigation
-            </p>
+            <p className="section-title px-3 pt-3 pb-2">Navigation</p>
           )}
           {nav.map(item =>
             item.kind === 'link' ? (
               <SideLink key={item.to} to={item.to} icon={item.icon} label={item.label} collapsed={collapsed} />
             ) : (
-              <SideGroup
-                key={item.key}
-                item={item}
-                collapsed={collapsed}
-                openGroups={openGroups}
-                toggleGroup={toggleGroup}
-              />
-            ),
+              <SideGroup key={item.key} item={item} collapsed={collapsed} openGroups={openGroups} toggleGroup={toggleGroup} />
+            )
           )}
         </nav>
 
         {/* Footer */}
-        <div className="p-2 border-t border-slate-800 space-y-0.5">
+        <div className="p-2 border-t space-y-0.5" style={{ borderColor: 'var(--border)' }}>
           <a
             href="https://github.com/modelscope/agentscope"
             target="_blank"
             rel="noreferrer"
             title={collapsed ? 'GitHub' : undefined}
             className={clsx(
-              'flex items-center gap-2 text-xs text-slate-500 hover:text-slate-300 transition rounded-lg hover:bg-slate-800/80 group relative',
-              collapsed ? 'justify-center px-0 py-2.5 mx-1' : 'px-3 py-2',
+              'flex items-center gap-2.5 text-xs rounded-lg transition-all duration-150 group relative',
+              collapsed ? 'justify-center p-2.5 mx-0.5' : 'px-3 py-2',
+              'text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800',
             )}
           >
             <Github size={14} className="shrink-0" />
-            {!collapsed && 'GitHub'}
+            {!collapsed && <span>GitHub</span>}
             {collapsed && (
-              <span className="absolute left-full ml-3 px-2 py-1 bg-slate-800 text-slate-100 text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap border border-slate-700 shadow-xl z-50 transition-opacity">
-                AgentScope on GitHub
+              <span className="absolute left-full ml-2.5 px-2.5 py-1.5 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap shadow-dropdown z-50 transition-opacity">
+                GitHub
               </span>
             )}
           </a>
@@ -254,98 +242,106 @@ export default function Layout() {
         {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed(c => !c)}
-          className="absolute -right-3 top-20 w-6 h-6 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-slate-700 transition-all shadow-md z-10"
+          className="absolute -right-3 top-[68px] w-6 h-6 rounded-full flex items-center justify-center transition-all shadow-card border bg-white dark:bg-slate-800 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 z-10"
+          style={{ borderColor: 'var(--border-strong)' }}
         >
-          {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+          {collapsed ? <ChevronRight size={11} /> : <ChevronLeft size={11} />}
         </button>
       </aside>
 
-      {/* ── Main area ────────────────────────────────────────────────────────── */}
+      {/* ── Main area ─────────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Topbar / Navbar */}
-        <header className="h-16 bg-slate-900/80 backdrop-blur-sm border-b border-slate-800 flex items-center px-6 gap-4 shrink-0 sticky top-0 z-20">
-          {/* Mobile menu toggle */}
+
+        {/* Topbar */}
+        <header className="h-14 flex items-center px-6 gap-4 shrink-0 sticky top-0 z-20 border-b backdrop-blur-md"
+          style={{ background: 'var(--navbar-bg)', borderColor: 'var(--border)' }}>
+
+          {/* Mobile */}
           <button
-            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition"
+            className="lg:hidden p-1.5 rounded-lg transition text-slate-400 hover:text-slate-600"
             onClick={() => setCollapsed(c => !c)}
           >
-            <Menu size={18} />
+            <Menu size={17} />
           </button>
 
-          {/* Page title */}
-          <div className="flex-1 flex items-center gap-2 min-w-0">
-            <pageInfo.icon size={16} className="text-slate-500 shrink-0" />
-            <span className="text-sm font-semibold text-slate-200 truncate">{pageInfo.title}</span>
+          {/* Page title + subtitle */}
+          <div className="flex-1 min-w-0">
+            <h1 className="text-sm font-semibold leading-none truncate" style={{ color: 'var(--text-primary)' }}>
+              {pageTitle}
+            </h1>
+            {pageSub && (
+              <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{pageSub}</p>
+            )}
           </div>
 
           {/* Right actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg transition-all text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              title={dark ? 'Switch to light' : 'Switch to dark'}
+            >
+              {dark ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+
             {/* Notifications */}
-            <button className="relative p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
-              <Bell size={16} />
+            <button className="relative p-2 rounded-lg transition-all text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800">
+              <Bell size={15} />
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-brand-500 rounded-full" />
             </button>
 
-            <div className="w-px h-6 bg-slate-800 mx-1" />
+            <div className="w-px h-5 mx-1" style={{ background: 'var(--border-strong)' }} />
 
-            {/* Profile dropdown */}
+            {/* Profile */}
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setProfileOpen(o => !o)}
                 className={clsx(
-                  'flex items-center gap-2 pl-1 pr-2 py-1 rounded-xl transition-all',
-                  profileOpen ? 'bg-slate-800 text-slate-100' : 'hover:bg-slate-800 text-slate-300 hover:text-slate-100',
+                  'flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-xl transition-all duration-150',
+                  profileOpen
+                    ? 'bg-slate-100 dark:bg-slate-800'
+                    : 'hover:bg-slate-100 dark:hover:bg-slate-800',
                 )}
               >
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-xs font-bold shadow-md">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                   A
                 </div>
-                <span className="text-sm font-medium hidden sm:block">Admin</span>
-                <ChevronDown
-                  size={14}
-                  className={clsx('text-slate-500 transition-transform hidden sm:block', profileOpen && 'rotate-180')}
-                />
+                <span className="text-sm font-medium hidden sm:block" style={{ color: 'var(--text-primary)' }}>Admin</span>
+                <ChevronDown size={13} className={clsx('transition-transform duration-200 hidden sm:block text-slate-400', profileOpen && 'rotate-180')} />
               </button>
 
               {profileOpen && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl shadow-black/50 overflow-hidden z-50 animate-in">
-                  {/* User info */}
-                  <div className="px-4 py-3 border-b border-slate-800">
+                <div className="absolute right-0 top-full mt-2 w-52 rounded-xl shadow-dropdown border overflow-hidden z-50 animate-in"
+                  style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                  <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-sm font-bold shadow-md">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-sm font-bold shadow-sm">
                         A
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-slate-100">Admin</p>
-                        <p className="text-xs text-slate-500">admin@agentscope.io</p>
+                        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Admin</p>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>admin@agentscope.io</p>
                       </div>
                     </div>
                   </div>
-
                   <div className="p-1.5">
-                    <button
-                      onClick={() => { setProfileOpen(false); navigate('/dashboard') }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition"
-                    >
-                      <User size={14} />
-                      Profile
-                    </button>
-                    <button
-                      onClick={() => setProfileOpen(false)}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition"
-                    >
-                      <Settings size={14} />
-                      Settings
-                    </button>
+                    {[
+                      { icon: User, label: 'Profile', action: () => { setProfileOpen(false); navigate('/dashboard') } },
+                      { icon: Settings, label: 'Settings', action: () => setProfileOpen(false) },
+                    ].map(({ icon: Icon, label, action }) => (
+                      <button key={label} onClick={action}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all hover:bg-slate-100 dark:hover:bg-slate-800"
+                        style={{ color: 'var(--text-secondary)' }}>
+                        <Icon size={13} /> {label}
+                      </button>
+                    ))}
                   </div>
-
-                  <div className="p-1.5 border-t border-slate-800">
-                    <button
-                      onClick={() => setProfileOpen(false)}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 transition"
-                    >
-                      <LogOut size={14} />
-                      Sign out
+                  <div className="p-1.5 border-t" style={{ borderColor: 'var(--border)' }}>
+                    <button onClick={() => setProfileOpen(false)}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all">
+                      <LogOut size={13} /> Sign out
                     </button>
                   </div>
                 </div>
@@ -354,7 +350,7 @@ export default function Layout() {
           </div>
         </header>
 
-        {/* Page content */}
+        {/* Content */}
         <main className="flex-1 overflow-auto">
           <Outlet />
         </main>

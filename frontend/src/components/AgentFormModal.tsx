@@ -117,18 +117,20 @@ export default function AgentFormModal({ agent, onClose }: Props) {
   const isPending = createMut.isPending || updateMut.isPending
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-dropdown border animate-in"
+        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
-          <h2 className="text-lg font-semibold">{isEdit ? 'Edit Agent' : 'Create Agent'}</h2>
-          <button className="btn-ghost p-1.5" onClick={onClose}><X size={18} /></button>
+        <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-10"
+          style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{isEdit ? 'Edit Agent' : 'Create Agent'}</h2>
+          <button className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition" style={{ color: 'var(--text-muted)' }} onClick={onClose}><X size={16} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Basic Info */}
           <section>
-            <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">Basic Info</h3>
+            <h3 className="section-title mb-3">Basic Info</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
                 <label className="label">Name *</label>
@@ -163,7 +165,7 @@ export default function AgentFormModal({ agent, onClose }: Props) {
 
           {/* System Prompt */}
           <section>
-            <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">System Prompt</h3>
+            <h3 className="section-title mb-3">System Prompt</h3>
             <textarea
               className="input min-h-[120px] resize-y font-mono text-xs"
               placeholder="You are a helpful AI assistant..."
@@ -174,7 +176,7 @@ export default function AgentFormModal({ agent, onClose }: Props) {
 
           {/* Model */}
           <section>
-            <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">Model</h3>
+            <h3 className="section-title mb-3">Model</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="label">Provider</label>
@@ -258,7 +260,7 @@ export default function AgentFormModal({ agent, onClose }: Props) {
 
           {/* Memory */}
           <section>
-            <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">Memory</h3>
+            <h3 className="section-title mb-3">Memory</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="label">Memory Backend</label>
@@ -296,16 +298,19 @@ export default function AgentFormModal({ agent, onClose }: Props) {
 
           {/* Tools */}
           <section>
-            <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">Builtin Tools</h3>
+            <h3 className="section-title mb-3">Builtin Tools</h3>
             <div className="grid grid-cols-2 gap-2">
               {builtinTools.map(tool => {
                 const enabled = form.tools.some(t => t.name === tool.name)
                 return (
                   <label
                     key={tool.name}
-                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition ${
-                      enabled ? 'border-brand-700 bg-brand-900/20' : 'border-slate-700 hover:border-slate-600'
+                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-150 ${
+                      enabled
+                        ? 'border-brand-300 bg-brand-50 dark:border-brand-700 dark:bg-brand-900/20'
+                        : 'hover:border-slate-300 dark:hover:border-slate-600'
                     }`}
+                    style={!enabled ? { borderColor: 'var(--border)' } : {}}
                   >
                     <input
                       type="checkbox"
@@ -314,8 +319,8 @@ export default function AgentFormModal({ agent, onClose }: Props) {
                       onChange={() => toggleTool(tool.name, tool.description, tool.tags)}
                     />
                     <div>
-                      <p className="text-xs font-medium text-slate-300">{tool.name}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">{tool.description}</p>
+                      <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{tool.name}</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{tool.description}</p>
                     </div>
                   </label>
                 )
@@ -325,7 +330,7 @@ export default function AgentFormModal({ agent, onClose }: Props) {
 
           {/* Tags */}
           <section>
-            <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">Tags</h3>
+            <h3 className="section-title mb-3">Tags</h3>
             <div className="flex gap-2 mb-2">
               <input
                 className="input flex-1"
@@ -351,10 +356,10 @@ export default function AgentFormModal({ agent, onClose }: Props) {
           </section>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-            <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
+          <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+            <button type="button" className="btn-outline" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={isPending}>
-              {isPending ? (isEdit ? 'Saving...' : 'Creating...') : isEdit ? 'Save Changes' : 'Create Agent'}
+              {isPending ? (isEdit ? 'Saving…' : 'Creating…') : isEdit ? 'Save Changes' : 'Create Agent'}
             </button>
           </div>
         </form>
