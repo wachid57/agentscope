@@ -108,6 +108,11 @@ excel-reader = [
     "pandas",
     "openpyxl",
 ]
+invoice-agent = [
+    "openpyxl",
+    "requests",
+    "APScheduler>=3.10",
+]
 ppt-reader = [
     "agentscope[text-reader]",
     "python-pptx"

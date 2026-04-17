@@ -39,6 +39,17 @@ from agentscope.tool import (
     insert_text_file,
 )
 
+# Invoice agent custom tools (optional — loaded only when openpyxl/requests are available)
+try:
+    import sys, os as _os
+    sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), "examples/deployment/invoice_agent"))
+    from tools import check_sheet_changed, read_gws_sheet, read_excel_invoice, create_invoice, send_telegram_message  # type: ignore
+    _INVOICE_TOOLS_AVAILABLE = True
+except Exception as _e:
+    _INVOICE_TOOLS_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning(f"Invoice agent tools not loaded: {_e}")
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -131,12 +142,19 @@ def build_formatter(provider: str) -> Any:
 # ── Tool factory ──────────────────────────────────────────────────────────────
 
 BUILTIN_TOOLS = {
-    "execute_python_code":  execute_python_code,
+    "execute_python_code":   execute_python_code,
     "execute_shell_command": execute_shell_command,
-    "view_text_file":       view_text_file,
-    "write_text_file":      write_text_file,
-    "insert_text_file":     insert_text_file,
+    "view_text_file":        view_text_file,
+    "write_text_file":       write_text_file,
+    "insert_text_file":      insert_text_file,
 }
+
+if _INVOICE_TOOLS_AVAILABLE:
+    BUILTIN_TOOLS["check_sheet_changed"]   = check_sheet_changed
+    BUILTIN_TOOLS["read_gws_sheet"]        = read_gws_sheet
+    BUILTIN_TOOLS["read_excel_invoice"]    = read_excel_invoice
+    BUILTIN_TOOLS["create_invoice"]        = create_invoice
+    BUILTIN_TOOLS["send_telegram_message"] = send_telegram_message
 
 
 def build_toolkit(tools_cfg: list) -> Toolkit:

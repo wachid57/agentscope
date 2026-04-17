@@ -1,0 +1,76 @@
+x-common-env: &common-env
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+  INVOICE_API_URL: ${INVOICE_API_URL:-http://host.docker.internal:8080}
+  INVOICE_API_KEY: ${INVOICE_API_KEY:-}
+  TELEGRAM_API_URL: ${TELEGRAM_API_URL:-http://host.docker.internal:8080}
+  TELEGRAM_JWT_TOKEN: ${TELEGRAM_JWT_TOKEN:-}
+  TELEGRAM_BOT_ID: ${TELEGRAM_BOT_ID:-}
+  GWS_API_URL: ${GWS_API_URL:-http://host.docker.internal:8083}
+  GWS_API_KEY: ${GWS_API_KEY:-}
+  GWS_USER_ID: ${GWS_USER_ID:-}
+  GWS_TENANT_ID: ${GWS_TENANT_ID:-}
+  SHEET_STATE_FILE: /app/state/sheet_state.json
+
+services:
+
+  # ── Invoice Agent HTTP server (dipanggil oleh scheduler & user manual) ───────
+  invoice-agent:
+    build:
+      context: ../../../..   # priva-agent/core root
+      dockerfile: Dockerfile
+    container_name: invoice-agent
+    restart: unless-stopped
+    command: python examples/deployment/invoice_agent/main.py
+    ports:
+      - "5002:5002"
+    environment:
+      <<: *common-env
+      AGENT_SERVER_PORT: 5002
+      SESSION_DIR: /app/sessions
+    volumes:
+      - ./:/app/examples/deployment/invoice_agent
+      - invoice-sessions:/app/sessions
+      - invoice-data:/data/invoices
+      - invoice-state:/app/state
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5002/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── Scheduler — poll perubahan sheet & trigger agent ─────────────────────────
+  invoice-scheduler:
+    build:
+      context: ../../../..
+      dockerfile: Dockerfile
+    container_name: invoice-scheduler
+    restart: unless-stopped
+    command: python examples/deployment/invoice_agent/scheduler.py
+    environment:
+      <<: *common-env
+      # Sheet yang dipantau
+      SPREADSHEET_ID: ${SPREADSHEET_ID:-}
+      # Tujuan notifikasi Telegram
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      # Interval polling dalam detik (default 300 = 5 menit)
+      SCHEDULER_INTERVAL: ${SCHEDULER_INTERVAL:-300}
+      # URL Invoice Agent server (dalam jaringan Docker)
+      AGENT_URL: http://invoice-agent:5002
+      SCHEDULER_SESSION_ID: scheduler-auto
+    volumes:
+      - ./:/app/examples/deployment/invoice_agent
+      - invoice-state:/app/state    # berbagi state file dengan agent
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      invoice-agent:
+        condition: service_healthy
+
+volumes:
+  invoice-sessions:
+  invoice-data:
+  invoice-state:

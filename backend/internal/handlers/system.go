@@ -175,6 +175,37 @@ func (h *SystemHandler) ListBuiltinTools(c *fiber.Ctx) error {
 			"description": "Search the web for information",
 			"tags":        []string{"web", "search"},
 		},
+		// ── Invoice Agent tools ───────────────────────────────────────────────
+		{
+			"name":        "check_sheet_changed",
+			"type":        "builtin",
+			"description": "Cek apakah Google Sheets berubah sejak pengecekan terakhir (via priva-gws, hemat token)",
+			"tags":        []string{"invoice", "google-sheets", "scheduler"},
+		},
+		{
+			"name":        "read_gws_sheet",
+			"type":        "builtin",
+			"description": "Baca data invoice dari Google Sheets melalui priva-gws MCP",
+			"tags":        []string{"invoice", "google-sheets", "gws"},
+		},
+		{
+			"name":        "read_excel_invoice",
+			"type":        "builtin",
+			"description": "Baca data invoice dari file Excel (.xlsx) lokal",
+			"tags":        []string{"invoice", "excel", "file"},
+		},
+		{
+			"name":        "create_invoice",
+			"type":        "builtin",
+			"description": "Buat invoice dan generate PDF melalui priva-invoice",
+			"tags":        []string{"invoice", "pdf", "priva-invoice"},
+		},
+		{
+			"name":        "send_telegram_message",
+			"type":        "builtin",
+			"description": "Kirim pesan ke Telegram melalui priva-telegram",
+			"tags":        []string{"invoice", "telegram", "notification"},
+		},
 	}
 	return c.JSON(fiber.Map{"data": tools})
 }
