@@ -6,6 +6,8 @@ import AgentDetailPage from './pages/AgentDetailPage'
 import ChatPage from './pages/ChatPage'
 import ToolsPage from './pages/ToolsPage'
 import ResourcesPage from './pages/ResourcesPage'
+import ProfilePage from './pages/ProfilePage'
+import SettingsPage from './pages/SettingsPage'
 
 export default function App() {
   return (
@@ -18,6 +20,8 @@ export default function App() {
         <Route path="agents/:id/chat" element={<ChatPage />} />
         <Route path="tools" element={<ToolsPage />} />
         <Route path="system/resources" element={<ResourcesPage />} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>
   )

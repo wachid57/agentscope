@@ -1,77 +1,56 @@
 import { useQuery } from '@tanstack/react-query'
 import {
-  Server,
-  Database,
-  Cpu,
-  Layers,
-  RefreshCw,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  HelpCircle,
-  Clock,
-  ExternalLink,
-  Activity,
+  Server, Database, Cpu, Layers, RefreshCw,
+  CheckCircle2, XCircle, AlertTriangle, HelpCircle,
+  Clock, ExternalLink, Activity,
 } from 'lucide-react'
 import { systemApi } from '../api/system'
 import type { ComponentHealth, ComponentStatus } from '../types'
 import clsx from 'clsx'
+import { useSetNavSubtitle } from '../context/NavSubtitle'
+import { useNavActions } from '../context/NavActions'
+import { useEffect } from 'react'
 
-// ─── Status helpers ──────────────────────────────────────────────────────────
+// ── Status helpers ────────────────────────────────────────────────────────────
 
 function statusColor(s: ComponentStatus) {
   switch (s) {
-    case 'healthy':   return 'text-emerald-400'
-    case 'degraded':  return 'text-amber-400'
-    case 'unhealthy': return 'text-red-400'
-    default:          return 'text-slate-400'
-  }
-}
-
-function statusBg(s: ComponentStatus) {
-  switch (s) {
-    case 'healthy':   return 'bg-emerald-900/30 border-emerald-800/50'
-    case 'degraded':  return 'bg-amber-900/30 border-amber-800/50'
-    case 'unhealthy': return 'bg-red-900/30 border-red-800/50'
-    default:          return 'bg-slate-800 border-slate-700'
+    case 'healthy':   return 'text-emerald-600 dark:text-emerald-400'
+    case 'degraded':  return 'text-amber-600 dark:text-amber-400'
+    case 'unhealthy': return 'text-red-600 dark:text-red-400'
+    default:          return 'text-slate-500'
   }
 }
 
 function statusDot(s: ComponentStatus) {
   switch (s) {
-    case 'healthy':   return 'bg-emerald-400 shadow-emerald-500/50'
-    case 'degraded':  return 'bg-amber-400 shadow-amber-500/50'
-    case 'unhealthy': return 'bg-red-400 shadow-red-500/50'
-    default:          return 'bg-slate-500'
+    case 'healthy':   return 'bg-emerald-500'
+    case 'degraded':  return 'bg-amber-500'
+    case 'unhealthy': return 'bg-red-500'
+    default:          return 'bg-slate-400'
   }
 }
 
 function StatusIcon({ status, size = 18 }: { status: ComponentStatus; size?: number }) {
   switch (status) {
-    case 'healthy':   return <CheckCircle2 size={size} className="text-emerald-400" />
-    case 'degraded':  return <AlertTriangle size={size} className="text-amber-400" />
-    case 'unhealthy': return <XCircle size={size} className="text-red-400" />
+    case 'healthy':   return <CheckCircle2 size={size} className="text-emerald-500" />
+    case 'degraded':  return <AlertTriangle size={size} className="text-amber-500" />
+    case 'unhealthy': return <XCircle size={size} className="text-red-500" />
     default:          return <HelpCircle size={size} className="text-slate-400" />
   }
 }
 
-function StatusLabel({ status }: { status: ComponentStatus }) {
-  const map: Record<ComponentStatus, string> = {
-    healthy:   'Healthy',
-    degraded:  'Degraded',
-    unhealthy: 'Unhealthy',
-    unknown:   'Unknown',
+function componentAccentClass(type: ComponentHealth['type']) {
+  switch (type) {
+    case 'backend':  return { bg: '#eff6ff', border: '#bfdbfe', color: '#2563eb' }
+    case 'core':     return { bg: '#f5f3ff', border: '#ddd6fe', color: '#7c3aed' }
+    case 'redis':    return { bg: '#fff7ed', border: '#fed7aa', color: '#ea580c' }
+    case 'database': return { bg: '#f0fdfa', border: '#99f6e4', color: '#0d9488' }
+    default:         return { bg: 'var(--bg-elevated)', border: 'var(--border)', color: 'var(--text-muted)' }
   }
-  return (
-    <span className={clsx('text-xs font-semibold uppercase tracking-wider', statusColor(status))}>
-      {map[status]}
-    </span>
-  )
 }
 
-// ─── Component icon ───────────────────────────────────────────────────────────
-
-function ComponentIcon({ type, size = 20 }: { type: ComponentHealth['type']; size?: number }) {
+function ComponentIcon({ type, size = 18 }: { type: ComponentHealth['type']; size?: number }) {
   switch (type) {
     case 'backend':  return <Server size={size} />
     case 'core':     return <Cpu size={size} />
@@ -81,80 +60,70 @@ function ComponentIcon({ type, size = 20 }: { type: ComponentHealth['type']; siz
   }
 }
 
-function componentAccent(type: ComponentHealth['type']) {
-  switch (type) {
-    case 'backend':  return 'text-brand-400 bg-brand-900/30 border-brand-800/50'
-    case 'core':     return 'text-violet-400 bg-violet-900/30 border-violet-800/50'
-    case 'redis':    return 'text-orange-400 bg-orange-900/30 border-orange-800/50'
-    case 'database': return 'text-teal-400 bg-teal-900/30 border-teal-800/50'
-    default:         return 'text-slate-400 bg-slate-800 border-slate-700'
-  }
-}
-
-// ─── Latency badge ────────────────────────────────────────────────────────────
-
 function LatencyBadge({ ms }: { ms: number }) {
-  const color = ms === 0 ? 'text-slate-500' : ms < 100 ? 'text-emerald-400' : ms < 500 ? 'text-amber-400' : 'text-red-400'
+  const color = ms === 0 ? 'var(--text-muted)' : ms < 100 ? '#16a34a' : ms < 500 ? '#d97706' : '#dc2626'
   return (
-    <span className={clsx('flex items-center gap-1 text-xs font-mono', color)}>
+    <span className="flex items-center gap-1 text-xs font-mono" style={{ color }}>
       <Clock size={11} />
       {ms === 0 ? '—' : `${ms} ms`}
     </span>
   )
 }
 
-// ─── Overall status banner ────────────────────────────────────────────────────
+// ── Overall banner ────────────────────────────────────────────────────────────
 
 function OverallBanner({ status, checkedAt }: { status: ComponentStatus; checkedAt: string }) {
-  const date = new Date(checkedAt)
-  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const timeStr = new Date(checkedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
-  const bannerBg = {
-    healthy:   'from-emerald-900/40 to-emerald-950/20 border-emerald-800/40',
-    degraded:  'from-amber-900/40 to-amber-950/20 border-amber-800/40',
-    unhealthy: 'from-red-900/40 to-red-950/20 border-red-800/40',
-    unknown:   'from-slate-800 to-slate-900 border-slate-700',
-  }[status]
-
-  const label = {
+  const styles: Record<ComponentStatus, { bg: string; border: string; text: string }> = {
+    healthy:   { bg: '#f0fdf4', border: '#bbf7d0', text: '#15803d' },
+    degraded:  { bg: '#fffbeb', border: '#fde68a', text: '#b45309' },
+    unhealthy: { bg: '#fef2f2', border: '#fecaca', text: '#dc2626' },
+    unknown:   { bg: 'var(--bg-elevated)', border: 'var(--border)', text: 'var(--text-muted)' },
+  }
+  const label: Record<ComponentStatus, string> = {
     healthy:   'All systems operational',
     degraded:  'Some systems are degraded',
     unhealthy: 'One or more systems are down',
     unknown:   'Status unknown',
-  }[status]
+  }
 
+  const s = styles[status]
   return (
-    <div className={clsx('rounded-xl border bg-gradient-to-r px-5 py-4 flex items-center justify-between', bannerBg)}>
+    <div className="rounded-xl border px-5 py-4 flex items-center justify-between"
+      style={{ background: s.bg, borderColor: s.border }}>
       <div className="flex items-center gap-3">
-        <div className={clsx('w-2.5 h-2.5 rounded-full shadow-lg animate-pulse', statusDot(status))} />
+        <div className={clsx('w-2.5 h-2.5 rounded-full animate-pulse', statusDot(status))} />
         <div>
-          <p className={clsx('font-semibold text-sm', statusColor(status))}>{label}</p>
-          <p className="text-xs text-slate-500 mt-0.5">Last checked at {timeStr}</p>
+          <p className="font-semibold text-sm" style={{ color: s.text }}>{label[status]}</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Last checked at {timeStr}</p>
         </div>
       </div>
-      <StatusIcon status={status} size={22} />
+      <StatusIcon status={status} size={20} />
     </div>
   )
 }
 
-// ─── Component card ───────────────────────────────────────────────────────────
+// ── Component card ────────────────────────────────────────────────────────────
 
 function ComponentCard({ comp }: { comp: ComponentHealth }) {
+  const accent = componentAccentClass(comp.type)
   return (
-    <div className={clsx('rounded-xl border bg-slate-900 overflow-hidden transition-all hover:border-slate-700', statusBg(comp.status).includes('border') ? '' : '')}>
-      {/* Card header */}
-      <div className="px-5 py-4 flex items-start justify-between gap-3">
+    <div className="card overflow-hidden flex flex-col">
+      <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
-          {/* Type icon */}
-          <div className={clsx('w-10 h-10 rounded-xl border flex items-center justify-center shrink-0', componentAccent(comp.type))}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+            style={{ background: accent.bg, borderColor: accent.border, color: accent.color }}>
             <ComponentIcon type={comp.type} size={18} />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-semibold text-slate-100">{comp.name}</h3>
-              <StatusLabel status={comp.status} />
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{comp.name}</h3>
+              <span className={clsx('text-xs font-semibold uppercase tracking-wider', statusColor(comp.status))}>
+                {comp.status}
+              </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5 truncate">{comp.message}</p>
+            <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{comp.message}</p>
           </div>
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -164,39 +133,37 @@ function ComponentCard({ comp }: { comp: ComponentHealth }) {
       </div>
 
       {/* Endpoint */}
-      <div className="px-5 pb-3">
-        <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-800/60 rounded-lg px-3 py-2 font-mono min-w-0">
-          <ExternalLink size={10} className="shrink-0" />
-          <span className="truncate">{comp.endpoint}</span>
-        </div>
+      <div className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg font-mono mb-3"
+        style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+        <ExternalLink size={10} className="shrink-0" />
+        <span className="truncate">{comp.endpoint}</span>
       </div>
 
       {/* Details */}
       {comp.details && Object.keys(comp.details).length > 0 && (
-        <div className="px-5 pb-4">
-          <div className="rounded-lg bg-slate-800/40 border border-slate-800 divide-y divide-slate-800">
-            {Object.entries(comp.details).map(([key, val]) => (
-              <div key={key} className="flex items-center justify-between px-3 py-1.5 text-xs">
-                <span className="text-slate-500 capitalize">{key.replace(/_/g, ' ')}</span>
-                <span className="text-slate-300 font-mono text-right max-w-[60%] truncate">{val}</span>
-              </div>
-            ))}
-          </div>
+        <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
+          {Object.entries(comp.details).map(([key, val], i) => (
+            <div key={key} className="flex items-center justify-between px-3 py-1.5 text-xs"
+              style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined, background: i % 2 === 0 ? 'var(--bg-elevated)' : 'var(--bg-surface)' }}>
+              <span style={{ color: 'var(--text-muted)' }} className="capitalize">{key.replace(/_/g, ' ')}</span>
+              <span className="font-mono text-right max-w-[60%] truncate" style={{ color: 'var(--text-secondary)' }}>{val}</span>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Status bar at bottom */}
-      <div className={clsx('h-0.5 w-full', {
-        'bg-emerald-500/50': comp.status === 'healthy',
-        'bg-amber-500/50':   comp.status === 'degraded',
-        'bg-red-500/50':     comp.status === 'unhealthy',
-        'bg-slate-700':      comp.status === 'unknown',
-      })} />
+      {/* Status bar */}
+      <div className={clsx('h-0.5 w-full -mx-5 mt-4', {
+        'bg-emerald-400': comp.status === 'healthy',
+        'bg-amber-400':   comp.status === 'degraded',
+        'bg-red-400':     comp.status === 'unhealthy',
+        'bg-slate-300':   comp.status === 'unknown',
+      })} style={{ marginBottom: -20, width: 'calc(100% + 40px)' }} />
     </div>
   )
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ResourcesPage() {
   const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useQuery({
@@ -205,63 +172,68 @@ export default function ResourcesPage() {
     refetchInterval: 15_000,
   })
 
-  const lastUpdate = dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'
+  const lastUpdate = dataUpdatedAt
+    ? new Date(dataUpdatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : '—'
+
+  const total = data?.components.length ?? 0
+  useSetNavSubtitle(`${total} component${total !== 1 ? 's' : ''} monitored`)
+
+  const { setActions } = useNavActions()
+  useEffect(() => {
+    setActions(
+      <>
+        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Updated {lastUpdate}</span>
+        <button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="btn-outline text-xs py-1.5"
+        >
+          <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} />
+          Refresh
+        </button>
+      </>
+    )
+    return () => setActions(null)
+  }, [lastUpdate, isFetching, refetch, setActions])
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100">Resources</h1>
-          <p className="text-slate-500 mt-1 text-sm">
-            Connection status and health of system components
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-600">Updated {lastUpdate}</span>
-          <button
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className={clsx(
-              'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all',
-              'bg-slate-800 border-slate-700 text-slate-300 hover:text-slate-100 hover:border-slate-600',
-              isFetching && 'opacity-50 cursor-not-allowed',
-            )}
-          >
-            <RefreshCw size={12} className={isFetching ? 'animate-spin' : ''} />
-            Refresh
-          </button>
-        </div>
-      </div>
+    <div className="p-8 max-w-screen-2xl mx-auto w-full">
 
       {/* Loading skeleton */}
       {isLoading && (
         <div className="space-y-4">
-          <div className="h-16 rounded-xl bg-slate-800 animate-pulse" />
+          <div className="h-16 rounded-xl animate-pulse" style={{ background: 'var(--bg-elevated)' }} />
+          <div className="grid grid-cols-3 gap-3">
+            {[...Array(3)].map((_, i) => <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: 'var(--bg-elevated)' }} />)}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-52 rounded-xl bg-slate-800 animate-pulse" />
-            ))}
+            {[...Array(4)].map((_, i) => <div key={i} className="h-52 rounded-xl animate-pulse" style={{ background: 'var(--bg-elevated)' }} />)}
           </div>
         </div>
       )}
 
       {/* Data loaded */}
       {data && (
-        <div className="space-y-6">
-          {/* Overall banner */}
+        <div className="space-y-5">
           <OverallBanner status={data.status} checkedAt={data.checked_at} />
 
           {/* Summary row */}
           <div className="grid grid-cols-3 gap-3">
-            {(['healthy', 'degraded', 'unhealthy'] as ComponentStatus[]).map(s => {
+            {(['healthy', 'degraded', 'unhealthy'] as const).map(s => {
               const count = data.components.filter(c => c.status === s).length
+              const bgMap = {
+                healthy:   { bg: '#f0fdf4', border: '#bbf7d0' },
+                degraded:  { bg: '#fffbeb', border: '#fde68a' },
+                unhealthy: { bg: '#fef2f2', border: '#fecaca' },
+              }[s]
               return (
-                <div key={s} className={clsx('rounded-xl border px-4 py-3 flex items-center gap-3', statusBg(s))}>
+                <div key={s} className="rounded-xl border px-4 py-3 flex items-center gap-3"
+                  style={{ background: bgMap.bg, borderColor: bgMap.border }}>
                   <div className={clsx('w-2 h-2 rounded-full', statusDot(s))} />
                   <div>
                     <p className={clsx('text-xl font-bold', statusColor(s))}>{count}</p>
-                    <p className="text-xs text-slate-500 capitalize">{s}</p>
+                    <p className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>{s}</p>
                   </div>
                 </div>
               )
@@ -275,8 +247,7 @@ export default function ResourcesPage() {
             ))}
           </div>
 
-          {/* Auto-refresh note */}
-          <p className="text-center text-xs text-slate-700">
+          <p className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
             Auto-refreshes every 15 seconds
           </p>
         </div>

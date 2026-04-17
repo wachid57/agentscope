@@ -1,19 +1,19 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Send, Bot, User, Loader2, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Send, Bot, User, Loader2, AlertTriangle, SquarePen } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { formatDistanceToNow } from 'date-fns'
 import { agentsApi } from '../api/agents'
 import type { ChatMessage } from '../types'
+import { useNavActions } from '../context/NavActions'
+import { useSetNavSubtitle } from '../context/NavSubtitle'
 
 export default function ChatPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const initialSessionId = searchParams.get('session') ?? ''
 
-  const [sessionId, setSessionId] = useState(initialSessionId)
+  const [sessionId, setSessionId] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
@@ -27,15 +27,43 @@ export default function ChatPage() {
     enabled: !!id,
   })
 
-  // Load existing session messages
+  const isOnline = agent?.status === 'running'
+
+  useSetNavSubtitle(agent ? (isOnline ? 'Online' : 'Offline') : '')
+
+  const { setActions } = useNavActions()
   useEffect(() => {
-    if (sessionId) {
-      agentsApi.listSessions(id!).then(data => {
-        const sess = data.data.find(s => s.id === sessionId)
-        if (sess) setMessages(sess.messages ?? [])
-      })
-    }
-  }, [sessionId, id])
+    if (!agent) return
+    setActions(
+      <div className="flex items-center gap-2">
+        {/* Agent info */}
+        <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg border" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border)' }}>
+          <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: '#eff6ff' }}>
+            <Bot size={13} className="text-brand-600" />
+          </div>
+          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{agent.name}</span>
+          <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+        </div>
+
+        <div className="w-px h-5" style={{ background: 'var(--border-strong)' }} />
+
+        {/* New chat */}
+        <button
+          className="btn-outline text-xs py-1.5"
+          onClick={() => { setMessages([]); setSessionId(''); setInput('') }}
+          title="New conversation"
+        >
+          <SquarePen size={13} /> New Chat
+        </button>
+
+        {/* Back */}
+        <button className="btn-ghost text-xs py-1.5" onClick={() => navigate(`/agents/${id}`)}>
+          <ArrowLeft size={13} /> Back
+        </button>
+      </div>
+    )
+    return () => setActions(null)
+  }, [agent, isOnline, id, navigate, setActions])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -49,7 +77,6 @@ export default function ChatPage() {
     setIsStreaming(true)
     setStreamingContent('')
 
-    // Optimistic user message
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
@@ -63,11 +90,7 @@ export default function ChatPage() {
       const res = await fetch(`/api/agents/${id}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_input: text,
-          user_id: 'user',
-          session_id: sessionId,
-        }),
+        body: JSON.stringify({ user_input: text, user_id: 'user', session_id: sessionId }),
       })
 
       if (!res.ok) throw new Error('Chat request failed')
@@ -80,13 +103,10 @@ export default function ChatPage() {
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-
-        const lines = decoder.decode(value).split('\n')
-        for (const line of lines) {
+        for (const line of decoder.decode(value).split('\n')) {
           if (!line.startsWith('data: ')) continue
           const raw = line.slice(6).trim()
           if (raw === '[DONE]') continue
-
           try {
             const data = JSON.parse(raw)
             if (data.done && data.message) {
@@ -96,31 +116,25 @@ export default function ChatPage() {
               fullContent += data.content
               setStreamingContent(fullContent)
             }
-          } catch { /* ignore parse errors */ }
+          } catch { /* ignore */ }
         }
       }
 
-      setMessages(prev => [
-        ...prev,
-        finalMsg ?? {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          name: agent?.name ?? 'Assistant',
-          content: fullContent,
-          timestamp: new Date().toISOString(),
-        },
-      ])
+      setMessages(prev => [...prev, finalMsg ?? {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        name: agent?.name ?? 'Assistant',
+        content: fullContent,
+        timestamp: new Date().toISOString(),
+      }])
     } catch (err) {
-      setMessages(prev => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          name: 'System',
-          content: `Error: ${err instanceof Error ? err.message : 'Unknown error'}`,
-          timestamp: new Date().toISOString(),
-        },
-      ])
+      setMessages(prev => [...prev, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        name: 'System',
+        content: `Error: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        timestamp: new Date().toISOString(),
+      }])
     } finally {
       setIsStreaming(false)
       setStreamingContent('')
@@ -129,99 +143,104 @@ export default function ChatPage() {
   }, [input, isStreaming, id, sessionId, agent])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
 
-  if (!agent) return <div className="p-8 text-slate-500">Loading...</div>
+  if (!agent) return (
+    <div className="flex items-center justify-center h-full">
+      <Loader2 size={20} className="animate-spin text-brand-500" />
+    </div>
+  )
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center gap-4 px-6 py-3 border-b border-slate-800 bg-slate-900/80 backdrop-blur shrink-0">
-        <button className="btn-ghost p-1.5" onClick={() => navigate(`/agents/${id}`)}>
-          <ArrowLeft size={16} />
-        </button>
-        <div className="w-8 h-8 rounded-lg bg-brand-900/50 border border-brand-800/50 flex items-center justify-center shrink-0">
-          <Bot size={15} className="text-brand-400" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-slate-100 text-sm">{agent.name}</p>
-          <p className="text-xs text-slate-500">
-            {agent.status === 'running' ? (
-              <span className="text-emerald-400">Online</span>
-            ) : (
-              <span className="text-amber-400">Simulated (agent not running)</span>
-            )}
-            {sessionId && <> · Session {sessionId.slice(0, 8)}...</>}
-          </p>
-        </div>
-      </div>
+    <div className="flex flex-col h-full" style={{ background: 'var(--bg-base)' }}>
 
-      {agent.status !== 'running' && (
-        <div className="mx-6 mt-4 p-3 rounded-lg bg-amber-900/20 border border-amber-800/50 flex items-center gap-2 text-amber-400 text-sm">
+      {/* Warning banner */}
+      {!isOnline && (
+        <div className="mx-6 mt-4 p-3 rounded-lg flex items-center gap-2 text-sm shrink-0"
+          style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#b45309' }}>
           <AlertTriangle size={14} />
-          Agent is not running. Responses will be simulated. Start the agent for real AI responses.
+          Agent is not running. Start the agent for real AI responses.
         </div>
       )}
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-        {messages.length === 0 && !isStreaming && (
-          <div className="flex flex-col items-center justify-center h-full text-center py-16">
-            <div className="w-16 h-16 rounded-2xl bg-brand-900/30 border border-brand-800/50 flex items-center justify-center mb-4">
-              <Bot size={28} className="text-brand-400" />
-            </div>
-            <h3 className="text-slate-300 font-semibold mb-1">Chat with {agent.name}</h3>
-            <p className="text-slate-600 text-sm">Send a message to start the conversation</p>
-          </div>
-        )}
+      {/* Messages area */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
 
-        {messages.map(msg => (
-          <MessageBubble key={msg.id} msg={msg} agentName={agent.name} />
-        ))}
+          {/* Empty state */}
+          {messages.length === 0 && !isStreaming && (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-card"
+                style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                <Bot size={28} className="text-brand-500" />
+              </div>
+              <h3 className="font-semibold text-base mb-1" style={{ color: 'var(--text-primary)' }}>
+                Chat with {agent.name}
+              </h3>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                Send a message to start the conversation
+              </p>
+            </div>
+          )}
 
-        {isStreaming && streamingContent && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-brand-900/50 border border-brand-800/50 flex items-center justify-center shrink-0">
-              <Bot size={14} className="text-brand-400" />
-            </div>
-            <div className="flex-1 bg-slate-800/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-2xl">
-              <ReactMarkdown className="prose prose-invert prose-sm max-w-none text-slate-300">
-                {streamingContent}
-              </ReactMarkdown>
-              <Loader2 size={12} className="animate-spin text-brand-400 mt-2" />
-            </div>
-          </div>
-        )}
+          {/* Messages */}
+          {messages.map(msg => (
+            <MessageBubble key={msg.id} msg={msg} agentName={agent.name} />
+          ))}
 
-        {isStreaming && !streamingContent && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-brand-900/50 border border-brand-800/50 flex items-center justify-center shrink-0">
-              <Bot size={14} className="text-brand-400" />
-            </div>
-            <div className="bg-slate-800/50 rounded-2xl rounded-tl-sm px-4 py-3">
-              <div className="flex gap-1 items-center h-5">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+          {/* Streaming bubble */}
+          {isStreaming && streamingContent && (
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                <Bot size={14} className="text-brand-500" />
+              </div>
+              <div className="flex-1 rounded-2xl rounded-tl-sm px-4 py-3 max-w-2xl shadow-card"
+                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                <ReactMarkdown className="prose prose-sm max-w-none dark:prose-invert">
+                  {streamingContent}
+                </ReactMarkdown>
+                <div className="flex gap-1 mt-2">
+                  {[0, 150, 300].map(d => (
+                    <span key={d} className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-bounce"
+                      style={{ animationDelay: `${d}ms` }} />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div ref={bottomRef} />
+          {/* Typing indicator */}
+          {isStreaming && !streamingContent && (
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                <Bot size={14} className="text-brand-500" />
+              </div>
+              <div className="rounded-2xl rounded-tl-sm px-4 py-3 shadow-card"
+                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                <div className="flex gap-1 items-center h-5">
+                  {[0, 150, 300].map(d => (
+                    <span key={d} className="w-2 h-2 rounded-full animate-bounce"
+                      style={{ background: 'var(--text-muted)', animationDelay: `${d}ms` }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div ref={bottomRef} />
+        </div>
       </div>
 
-      {/* Input */}
-      <div className="px-6 py-4 border-t border-slate-800 bg-slate-900/80 shrink-0">
-        <div className="flex gap-3 items-end max-w-4xl mx-auto">
+      {/* Input bar */}
+      <div className="shrink-0 border-t px-6 py-4" style={{ borderColor: 'var(--border)', background: 'var(--bg-surface)' }}>
+        <div className="max-w-3xl mx-auto flex gap-3 items-end">
           <textarea
             ref={inputRef}
             className="input flex-1 resize-none max-h-40 min-h-[44px]"
-            placeholder="Type a message... (Enter to send, Shift+Enter for newline)"
+            placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -236,34 +255,46 @@ export default function ChatPage() {
             {isStreaming ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
           </button>
         </div>
+        {sessionId && (
+          <p className="text-center text-[10px] mt-2" style={{ color: 'var(--text-muted)' }}>
+            Session {sessionId.slice(0, 8)}…
+          </p>
+        )}
       </div>
     </div>
   )
 }
 
+// ── Message bubble ────────────────────────────────────────────────────────────
+
 function MessageBubble({ msg, agentName }: { msg: ChatMessage; agentName: string }) {
   const isUser = msg.role === 'user'
   return (
     <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-        isUser ? 'bg-slate-700 border border-slate-600' : 'bg-brand-900/50 border border-brand-800/50'
-      }`}>
-        {isUser ? <User size={14} className="text-slate-300" /> : <Bot size={14} className="text-brand-400" />}
+      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+        style={isUser
+          ? { background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)' }
+          : { background: '#eff6ff', border: '1px solid #bfdbfe' }
+        }>
+        {isUser
+          ? <User size={14} style={{ color: 'var(--text-secondary)' }} />
+          : <Bot size={14} className="text-brand-500" />
+        }
       </div>
-      <div className={`max-w-2xl ${isUser ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-        <span className="text-[10px] text-slate-600 px-1">
-          {isUser ? 'You' : agentName} ·{' '}
-          {formatDistanceToNow(new Date(msg.timestamp))} ago
+
+      <div className={`max-w-2xl flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
+        <span className="text-[10px] px-1" style={{ color: 'var(--text-muted)' }}>
+          {isUser ? 'You' : agentName} · {formatDistanceToNow(new Date(msg.timestamp))} ago
         </span>
-        <div className={`px-4 py-3 rounded-2xl text-sm ${
-          isUser
-            ? 'bg-brand-600 text-white rounded-tr-sm'
-            : 'bg-slate-800/50 text-slate-200 rounded-tl-sm'
-        }`}>
+        <div className={`px-4 py-3 rounded-2xl text-sm shadow-card ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
+          style={isUser
+            ? { background: '#2563eb', color: '#fff' }
+            : { background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border)' }
+          }>
           {isUser ? (
             <p className="whitespace-pre-wrap">{msg.content}</p>
           ) : (
-            <ReactMarkdown className="prose prose-invert prose-sm max-w-none">
+            <ReactMarkdown className="prose prose-sm max-w-none dark:prose-invert">
               {msg.content}
             </ReactMarkdown>
           )}

@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useNavSubtitle } from '../context/NavSubtitle'
+import { useNavActions } from '../context/NavActions'
 import {
-  LayoutDashboard, Bot, Wrench, Github, ChevronLeft, ChevronRight,
+  LayoutDashboard, Bot, Wrench, ChevronLeft, ChevronRight,
   Bell, Settings, LogOut, User, ChevronDown, Menu, Zap,
   MonitorDot, HardDrive, Sun, Moon,
 } from 'lucide-react'
@@ -45,12 +46,14 @@ const nav: NavItem[] = [
 
 function usePageMeta() {
   const { pathname } = useLocation()
-  if (pathname.includes('/chat'))               return { title: 'Chat',         sub: 'Conversation with agent' }
-  if (pathname.startsWith('/agents/'))          return { title: 'Agent Detail', sub: 'View and manage agent' }
-  if (pathname.startsWith('/agents'))           return { title: 'Agents',       sub: 'Manage your AI agents' }
-  if (pathname.startsWith('/tools'))            return { title: 'Tools',        sub: 'Available tools and integrations' }
-  if (pathname.startsWith('/system/resources')) return { title: 'Resources',    sub: 'System resource usage' }
+  if (pathname.includes('/chat'))               return { title: 'Chat',         sub: '' }
+  if (pathname.startsWith('/agents/'))          return { title: 'Agent Detail', sub: '' }
+  if (pathname.startsWith('/agents'))           return { title: 'Agents',       sub: '' }
+  if (pathname.startsWith('/tools'))            return { title: 'Tools',        sub: '' }
+  if (pathname.startsWith('/system/resources')) return { title: 'Resources',    sub: '' }
   if (pathname.startsWith('/dashboard'))        return { title: 'Dashboard',    sub: 'Monitor your AgentScope deployment in real-time' }
+  if (pathname.startsWith('/profile'))          return { title: 'Profile',      sub: '' }
+  if (pathname.startsWith('/settings'))         return { title: 'Settings',     sub: '' }
   return { title: 'AgentScope', sub: '' }
 }
 
@@ -156,6 +159,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const { title: pageTitle, sub: staticSub } = usePageMeta()
   const { subtitle: dynSub } = useNavSubtitle()
+  const { actions: navActions } = useNavActions()
   const pageSub = dynSub || staticSub
   const { dark, toggle: toggleTheme } = useTheme()
 
@@ -216,28 +220,6 @@ export default function Layout() {
           )}
         </nav>
 
-        {/* Footer */}
-        <div className="p-2 border-t space-y-0.5" style={{ borderColor: 'var(--border)' }}>
-          <a
-            href="https://github.com/modelscope/agentscope"
-            target="_blank"
-            rel="noreferrer"
-            title={collapsed ? 'GitHub' : undefined}
-            className={clsx(
-              'flex items-center gap-2.5 text-xs rounded-lg transition-all duration-150 group relative',
-              collapsed ? 'justify-center p-2.5 mx-0.5' : 'px-3 py-2',
-              'text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800',
-            )}
-          >
-            <Github size={14} className="shrink-0" />
-            {!collapsed && <span>GitHub</span>}
-            {collapsed && (
-              <span className="absolute left-full ml-2.5 px-2.5 py-1.5 bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap shadow-dropdown z-50 transition-opacity">
-                GitHub
-              </span>
-            )}
-          </a>
-        </div>
 
         {/* Collapse toggle */}
         <button
@@ -273,6 +255,13 @@ export default function Layout() {
               <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{pageSub}</p>
             )}
           </div>
+
+          {/* Page-level actions slot */}
+          {navActions && (
+            <div className="flex items-center gap-2 mr-2">
+              {navActions}
+            </div>
+          )}
 
           {/* Right actions */}
           <div className="flex items-center gap-1">
@@ -328,8 +317,8 @@ export default function Layout() {
                   </div>
                   <div className="p-1.5">
                     {[
-                      { icon: User, label: 'Profile', action: () => { setProfileOpen(false); navigate('/dashboard') } },
-                      { icon: Settings, label: 'Settings', action: () => setProfileOpen(false) },
+                      { icon: User, label: 'Profile', action: () => { setProfileOpen(false); navigate('/profile') } },
+                      { icon: Settings, label: 'Settings', action: () => { setProfileOpen(false); navigate('/settings') } },
                     ].map(({ icon: Icon, label, action }) => (
                       <button key={label} onClick={action}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all hover:bg-slate-100 dark:hover:bg-slate-800"

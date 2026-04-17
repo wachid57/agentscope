@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import App from './App'
 import { NavSubtitleProvider } from './context/NavSubtitle'
+import { NavActionsProvider } from './context/NavActions'
 import './index.css'
 
 const queryClient = new QueryClient({
@@ -18,6 +19,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <NavSubtitleProvider>
+        <NavActionsProvider>
         <App />
         <Toaster
           position="top-right"
@@ -25,6 +27,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             style: { background: '#1e293b', color: '#f1f5f9', border: '1px solid #334155' },
           }}
         />
+        </NavActionsProvider>
         </NavSubtitleProvider>
       </BrowserRouter>
     </QueryClientProvider>
