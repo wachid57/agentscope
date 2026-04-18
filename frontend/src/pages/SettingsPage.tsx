@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Settings, Bell, Globe, Database, Trash2, Save, Webhook } from 'lucide-react'
+import { Settings, Bell, Globe, Database, Trash2, Save, Webhook, Plug, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSetNavSubtitle } from '../context/NavSubtitle'
 import { systemApi } from '../api/system'
@@ -46,6 +46,36 @@ export default function SettingsPage() {
     toast.success('GWS settings saved')
     // simpan ke DB jika backend tersedia
     gwsMut.mutate({ gws_base_url: url, gws_api_key: key })
+  }
+
+  type TestStatus = 'idle' | 'loading' | 'ok' | 'error'
+  const [testStatus, setTestStatus] = useState<TestStatus>('idle')
+  const [testMsg, setTestMsg] = useState('')
+
+  const testConnection = async () => {
+    const url = gws.baseUrl.trim()
+    if (!url) { toast.error('GWS Base URL belum diisi'); return }
+    setTestStatus('loading')
+    setTestMsg('')
+    try {
+      const key = gws.apiKey.trim()
+      const headers: Record<string, string> = {}
+      if (key) headers['Authorization'] = `Bearer ${key}`
+      const res = await fetch(`${url}/health`, { headers, signal: AbortSignal.timeout(5000) })
+      const json = await res.json()
+      if (res.ok) {
+        const ver = json?.data?.version ?? json?.version ?? ''
+        setTestStatus('ok')
+        setTestMsg(`Terhubung${ver ? ` — v${ver}` : ''}`)
+      } else {
+        setTestStatus('error')
+        setTestMsg(`HTTP ${res.status}`)
+      }
+    } catch (e: unknown) {
+      setTestStatus('error')
+      const msg = e instanceof Error ? e.message : 'Gagal terhubung'
+      setTestMsg(msg.includes('abort') ? 'Timeout (5s)' : msg)
+    }
   }
 
   const [general, setGeneral] = useState({
@@ -171,7 +201,29 @@ export default function SettingsPage() {
                   placeholder="Bearer token (opsional)"
                 />
               </div>
-              <div className="flex justify-end pt-2">
+              {/* Status indikator */}
+              {testStatus !== 'idle' && (
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
+                  testStatus === 'loading' ? 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                  : testStatus === 'ok'    ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400'
+                  :                         'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400'
+                }`}>
+                  {testStatus === 'loading' && <Loader2 size={13} className="animate-spin shrink-0" />}
+                  {testStatus === 'ok'      && <CheckCircle2 size={13} className="shrink-0" />}
+                  {testStatus === 'error'   && <XCircle size={13} className="shrink-0" />}
+                  <span>{testStatus === 'loading' ? 'Menguji koneksi…' : testMsg}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  type="button"
+                  onClick={testConnection}
+                  disabled={testStatus === 'loading'}
+                  className="btn-outline flex items-center gap-2 text-sm"
+                >
+                  <Plug size={13} /> Test Connection
+                </button>
                 <button type="submit" className="btn-primary">
                   <Save size={14} /> Save GWS Settings
                 </button>
