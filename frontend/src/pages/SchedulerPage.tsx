@@ -392,19 +392,33 @@ export default function SchedulerPage() {
               {/* Divider */}
               <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-4 flex-wrap">
-                  {/* Timestamps */}
+                  {/* Scheduler created */}
                   <span className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
                     <CalendarDays size={10} />
-                    Created {formatDate(s.created_at)}
+                    Jadwal dibuat: {formatDate(s.created_at)}
                   </span>
-                  <span className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    <Pencil size={9} />
-                    Updated {formatDate(s.updated_at)}
-                  </span>
+
+                  {/* File modified (from Drive) */}
+                  {s.file_modified_at && (
+                    <span className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                      <RefreshCw size={10} />
+                      File diubah: {formatDate(s.file_modified_at)}
+                    </span>
+                  )}
+
+                  {/* Last run */}
+                  {s.last_checked_at && (
+                    <span className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                      <Clock size={10} />
+                      Terakhir jalan: {formatDate(s.last_checked_at)}
+                    </span>
+                  )}
+
+                  {/* Last triggered (webhook fired) */}
                   {s.last_triggered_at && (
-                    <span className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
-                      <CheckCircle2 size={10} />
-                      Last triggered {formatDate(s.last_triggered_at)}
+                    <span className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                      <Zap size={10} />
+                      Terakhir trigger: {formatDate(s.last_triggered_at)}
                     </span>
                   )}
 
