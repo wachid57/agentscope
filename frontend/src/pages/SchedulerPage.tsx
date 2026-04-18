@@ -10,6 +10,10 @@ function isApiDisabledError(msg: string) {
   return msg.includes('SERVICE_DISABLED') || msg.includes('accessNotConfigured') || msg.includes('has not been used in project')
 }
 
+function isFailedPreconditionError(msg: string) {
+  return msg.includes('failedPrecondition') || msg.includes('is not supported for this document') || msg.includes('Spreadsheet ID tidak valid')
+}
+
 function extractEnableUrl(msg: string): string {
   const match = msg.match(/https:\/\/console\.developers\.google\.com\/apis\/api\/sheets\.googleapis\.com\/overview\?project=(\d+)/)
   if (match) return match[0]
@@ -335,6 +339,11 @@ export default function SchedulerPage() {
                   {s.error_msg && (
                     isApiDisabledError(s.error_msg) ? (
                       <ApiDisabledBadge url={extractEnableUrl(s.error_msg)} />
+                    ) : isFailedPreconditionError(s.error_msg) ? (
+                      <span className="flex items-center gap-1.5 text-xs text-orange-600 dark:text-orange-400">
+                        <AlertCircle size={11} className="shrink-0" />
+                        Spreadsheet ID tidak valid atau bukan Google Sheets. Klik Edit untuk memperbaiki.
+                      </span>
                     ) : (
                       <span className="flex items-center gap-1 text-xs text-red-500">
                         <AlertCircle size={11} /> {s.error_msg}
