@@ -342,7 +342,7 @@ export default function SchedulerPage() {
                     ) : isFailedPreconditionError(s.error_msg) ? (
                       <span className="flex items-center gap-1.5 text-xs text-orange-600 dark:text-orange-400">
                         <AlertCircle size={11} className="shrink-0" />
-                        Spreadsheet ID tidak valid atau bukan Google Sheets. Klik Edit untuk memperbaiki.
+                        File Excel (.xlsx) tidak didukung. Buka file → <em>File &gt; Simpan sebagai Google Sheets</em>, lalu update ID-nya.
                       </span>
                     ) : (
                       <span className="flex items-center gap-1 text-xs text-red-500">
