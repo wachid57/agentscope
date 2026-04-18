@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Clock, Plus, Trash2, ToggleLeft, ToggleRight, AlertCircle, CheckCircle2, Link, Pencil, Play, X, Save, Loader2, XCircle, ExternalLink, Copy, Check, CalendarDays, RefreshCw, Zap, Sheet } from 'lucide-react'
+import { Clock, Plus, Trash2, ToggleLeft, ToggleRight, AlertCircle, CheckCircle2, Link, Pencil, Play, X, Save, Loader2, XCircle, ExternalLink, Copy, Check, CalendarDays, RefreshCw, Zap, Sheet, Webhook, Bot } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { schedulerApi, Scheduler, CreateSchedulerPayload } from '../api/gws'
+import { agentsApi } from '../api/agents'
 import { systemApi } from '../api/system'
 import toast from 'react-hot-toast'
 
@@ -36,7 +37,9 @@ function formatDate(val: string | null) {
 const emptyForm: CreateSchedulerPayload = {
   name: '', spreadsheet_id: '', sheet_range: '',
   check_mode: 'sheets', drive_file_id: '',
-  interval_seconds: 300, webhook_url: '', webhook_secret: '', is_active: true,
+  interval_seconds: 300, webhook_url: '', webhook_secret: '',
+  trigger_type: 'webhook', agent_id: '',
+  is_active: true,
 }
 
 // ── API Disabled Badge ────────────────────────────────────────────────────────
@@ -82,11 +85,13 @@ function SchedulerModal({ initial, onClose, onSave, saving }: {
   onSave: (id: string | undefined, data: CreateSchedulerPayload) => void
   saving: boolean
 }) {
-  const [form, setForm] = useState<CreateSchedulerPayload>(initial)
+  const [form, setForm] = useState<CreateSchedulerPayload>({ ...initial, trigger_type: initial.trigger_type ?? 'webhook', agent_id: initial.agent_id ?? '' })
   const [testResult, setTestResult] = useState<TestResult>(null)
   const [testing, setTesting] = useState(false)
   const set = (k: keyof CreateSchedulerPayload, v: unknown) => setForm(f => ({ ...f, [k]: v }))
   const isEdit = !!initial.id
+
+  const { data: agentsData } = useQuery({ queryKey: ['agents-list'], queryFn: agentsApi.list })
 
   const runTest = async () => {
     if (!initial.id) return
@@ -160,14 +165,69 @@ function SchedulerModal({ initial, onClose, onSave, saving }: {
               <input className="input" type="number" value={form.interval_seconds} onChange={e => set('interval_seconds', Number(e.target.value))} min={30} />
               <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Min. 30 detik</p>
             </div>
-            <div>
-              <label className="label">Webhook URL</label>
-              <input className="input" value={form.webhook_url} onChange={e => set('webhook_url', e.target.value)} placeholder="https://..." />
+
+            {/* Trigger Type Toggle */}
+            <div className="md:col-span-2">
+              <label className="label">Trigger Ke</label>
+              <div className="flex gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => set('trigger_type', 'webhook')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                    form.trigger_type !== 'agent'
+                      ? 'border-brand-500 text-brand-600 bg-brand-50 dark:bg-brand-950/30'
+                      : 'border-transparent text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                  style={form.trigger_type !== 'agent' ? { borderColor: 'var(--brand-500)' } : { border: '1px solid var(--border)' }}
+                >
+                  <Webhook size={14} /> Webhook
+                </button>
+                <button
+                  type="button"
+                  onClick={() => set('trigger_type', 'agent')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                    form.trigger_type === 'agent'
+                      ? 'border-brand-500 text-brand-600 bg-brand-50 dark:bg-brand-950/30'
+                      : 'border-transparent text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                  style={form.trigger_type === 'agent' ? { borderColor: 'var(--brand-500)' } : { border: '1px solid var(--border)' }}
+                >
+                  <Bot size={14} /> Agent
+                </button>
+              </div>
             </div>
-            <div>
-              <label className="label">Webhook Secret</label>
-              <input className="input" value={form.webhook_secret} onChange={e => set('webhook_secret', e.target.value)} placeholder="Optional" />
-            </div>
+
+            {/* Webhook fields */}
+            {form.trigger_type !== 'agent' && <>
+              <div>
+                <label className="label">Webhook URL</label>
+                <input className="input" value={form.webhook_url} onChange={e => set('webhook_url', e.target.value)} placeholder="https://..." />
+              </div>
+              <div>
+                <label className="label">Webhook Secret</label>
+                <input className="input" value={form.webhook_secret} onChange={e => set('webhook_secret', e.target.value)} placeholder="Optional" />
+              </div>
+            </>}
+
+            {/* Agent picker */}
+            {form.trigger_type === 'agent' && (
+              <div className="md:col-span-2">
+                <label className="label">Pilih Agent</label>
+                <select
+                  className="input"
+                  value={form.agent_id}
+                  onChange={e => set('agent_id', e.target.value)}
+                >
+                  <option value="">— Pilih Agent —</option>
+                  {(agentsData?.data ?? []).map(a => (
+                    <option key={a.id} value={a.id}>{a.name} ({a.type})</option>
+                  ))}
+                </select>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                  Agent akan di-start secara otomatis saat ada perubahan pada file.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -343,6 +403,15 @@ export default function SchedulerPage() {
                     <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
                       <Sheet size={10} /> {s.check_mode === 'sheets' ? 'Google Sheets' : 'Google Drive'}
                     </span>
+                    {s.trigger_type === 'agent' ? (
+                      <span className="flex items-center gap-1 text-[11px] text-purple-600 dark:text-purple-400 font-medium">
+                        <Bot size={10} /> Agent
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                        <Webhook size={10} /> Webhook
+                      </span>
+                    )}
                     {s.trigger_count > 0 && (
                       <span className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
                         <Zap size={10} /> {s.trigger_count} triggers

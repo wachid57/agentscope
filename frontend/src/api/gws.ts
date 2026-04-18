@@ -53,6 +53,8 @@ export interface Scheduler {
   interval_seconds: number
   webhook_url: string
   webhook_secret: string
+  trigger_type: 'webhook' | 'agent'
+  agent_id: string
   is_active: boolean
   last_triggered_at: string | null
   last_checked_at: string | null
@@ -74,6 +76,8 @@ export interface CreateSchedulerPayload {
   interval_seconds: number
   webhook_url: string
   webhook_secret: string
+  trigger_type: 'webhook' | 'agent'
+  agent_id: string
   is_active: boolean
 }
 
