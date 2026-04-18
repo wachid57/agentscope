@@ -33,7 +33,9 @@ const gwsClient = axios.create({
 
 gwsClient.interceptors.request.use(async cfg => {
   const settings = await getGwsSettings()
-  cfg.baseURL = settings['gws_base_url'] ?? ''
+  // Gunakan /gws (proxy via nginx agentscope) agar tidak kena Chrome PNA block
+  // GWS base URL di settings hanya dipakai untuk test connection langsung
+  cfg.baseURL = '/gws'
   const key = settings['gws_api_key'] ?? ''
   if (key) cfg.headers['Authorization'] = `Bearer ${key}`
   return cfg

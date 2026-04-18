@@ -66,7 +66,8 @@ export default function SettingsPage() {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (key) headers['Authorization'] = `Bearer ${key}`
 
-      const res = await fetch(`${url}/api/v1.0/schedulers`, { headers, signal: controller.signal })
+      // Test via proxy nginx /gws/ untuk hindari Chrome PNA block
+      const res = await fetch(`/gws/api/v1.0/schedulers`, { headers, signal: controller.signal })
       clearTimeout(timer)
       const json = await res.json()
 
@@ -84,14 +85,9 @@ export default function SettingsPage() {
     } catch (e: unknown) {
       clearTimeout(timer)
       setTestStatus('error')
-      const msg = e instanceof Error ? e.message : 'Gagal terhubung'
-      if (msg === 'signal is aborted without reason' || msg.includes('abort') || msg.includes('timed out')) {
-        setTestMsg('Timeout (8s) — periksa URL dan port (fe: 3001, be: 8083)')
-      } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
-        setTestMsg(`Tidak dapat terhubung ke ${url} — cek URL atau CORS`)
-      } else {
-        setTestMsg(msg)
-      }
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('[GWS Test] error:', e)
+      setTestMsg(msg || 'Unknown error')
     }
   }
 
