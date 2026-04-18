@@ -162,8 +162,18 @@ func (h *SessionHandler) Chat(c *fiber.Ctx) error {
 					// Try to parse as Msg dict from AgentScope
 					var msgMap map[string]any
 					if json.Unmarshal([]byte(raw), &msgMap) == nil {
-						if content, ok := msgMap["content"].(string); ok {
-							assistantContent.WriteString(content)
+						// Handle content as string OR array of objects
+						if contentStr, ok := msgMap["content"].(string); ok {
+							assistantContent.WriteString(contentStr)
+						} else if contentArr, ok := msgMap["content"].([]any); ok {
+							// Extract text from content array: [{"type": "text", "text": "..."}]
+							for _, item := range contentArr {
+								if itemMap, ok := item.(map[string]any); ok {
+									if text, ok := itemMap["text"].(string); ok {
+										assistantContent.WriteString(text)
+									}
+								}
+							}
 						}
 						// Check for error from Python
 						if errMsg, ok := msgMap["error"].(string); ok {
