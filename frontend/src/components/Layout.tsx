@@ -5,7 +5,7 @@ import { useNavActions } from '../context/NavActions'
 import {
   LayoutDashboard, Bot, Wrench, ChevronLeft, ChevronRight,
   Bell, Settings, LogOut, User, ChevronDown, Menu, Zap,
-  MonitorDot, HardDrive, Sun, Moon,
+  MonitorDot, HardDrive, Sun, Moon, List, Clock,
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -35,7 +35,13 @@ type NavItem =
 const nav: NavItem[] = [
   { kind: 'link', to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { kind: 'link', to: '/agents',    icon: Bot,             label: 'Agents'    },
-  { kind: 'link', to: '/tools',     icon: Wrench,          label: 'Tools'     },
+  {
+    kind: 'group', icon: Wrench, label: 'Tools', key: 'tools',
+    children: [
+      { to: '/tools/list',      icon: List,  label: 'Lists'     },
+      { to: '/tools/scheduler', icon: Clock, label: 'Scheduler' },
+    ],
+  },
   {
     kind: 'group', icon: MonitorDot, label: 'System', key: 'system',
     children: [{ to: '/system/resources', icon: HardDrive, label: 'Resources' }],
@@ -49,6 +55,8 @@ function usePageMeta() {
   if (pathname.includes('/chat'))               return { title: 'Chat',         sub: '' }
   if (pathname.startsWith('/agents/'))          return { title: 'Agent Detail', sub: '' }
   if (pathname.startsWith('/agents'))           return { title: 'Agents',       sub: '' }
+  if (pathname.startsWith('/tools/scheduler'))  return { title: 'Scheduler',    sub: '' }
+  if (pathname.startsWith('/tools/list'))       return { title: 'Tools',        sub: '' }
   if (pathname.startsWith('/tools'))            return { title: 'Tools',        sub: '' }
   if (pathname.startsWith('/system/resources')) return { title: 'Resources',    sub: '' }
   if (pathname.startsWith('/dashboard'))        return { title: 'Dashboard',    sub: 'Monitor your AgentScope deployment in real-time' }
@@ -154,7 +162,7 @@ function SideGroup({ item, collapsed, openGroups, toggleGroup }: {
 export default function Layout() {
   const [collapsed, setCollapsed] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set(['system']))
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set(['system', 'tools']))
   const profileRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const { title: pageTitle, sub: staticSub } = usePageMeta()
