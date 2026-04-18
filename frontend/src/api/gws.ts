@@ -8,9 +8,17 @@ async function getGwsSettings(): Promise<Record<string, string>> {
   if (_cache) return _cache
   try {
     const res = await client.get<{ data: Record<string, string> }>('/settings')
-    _cache = res.data.data ?? {}
+    const fromDb = res.data.data ?? {}
+    // fallback ke localStorage jika DB belum ada nilainya
+    _cache = {
+      gws_base_url: fromDb['gws_base_url'] || localStorage.getItem('gws_base_url') || '',
+      gws_api_key:  fromDb['gws_api_key']  || localStorage.getItem('gws_api_key')  || '',
+    }
   } catch {
-    _cache = {}
+    _cache = {
+      gws_base_url: localStorage.getItem('gws_base_url') || '',
+      gws_api_key:  localStorage.getItem('gws_api_key')  || '',
+    }
   }
   return _cache
 }

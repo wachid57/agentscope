@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Clock, Plus, Trash2, ToggleLeft, ToggleRight, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Clock, Plus, Trash2, ToggleLeft, ToggleRight, AlertCircle, CheckCircle2, Link } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { schedulerApi, Scheduler, CreateSchedulerPayload } from '../api/gws'
+import { systemApi } from '../api/system'
 
 function formatInterval(secs: number) {
   if (secs < 60) return `${secs}s`
@@ -28,8 +30,12 @@ const defaultForm: CreateSchedulerPayload = {
 
 export default function SchedulerPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState<CreateSchedulerPayload>(defaultForm)
+
+  const { data: appSettings } = useQuery({ queryKey: ['settings'], queryFn: systemApi.getSettings })
+  const gwsUrl = appSettings?.['gws_base_url'] || localStorage.getItem('gws_base_url') || ''
 
   const { data, isLoading } = useQuery({
     queryKey: ['schedulers'],
@@ -40,6 +46,11 @@ export default function SchedulerPage() {
   const createMut = useMutation({
     mutationFn: schedulerApi.create,
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['schedulers'] }); setShowForm(false); setForm(defaultForm) },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message
+      console.error('Create scheduler error:', err)
+      if (msg) console.error('GWS error:', msg)
+    },
   })
 
   const deleteMut = useMutation({
@@ -57,7 +68,21 @@ export default function SchedulerPage() {
   }
 
   return (
-    <div className="p-8 max-w-screen-xl mx-auto w-full">
+    <div className="p-6 w-full">
+      {!gwsUrl && (
+        <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800">
+          <AlertCircle size={15} className="text-amber-500 shrink-0" />
+          <p className="text-sm text-amber-700 dark:text-amber-400 flex-1">
+            GWS Base URL belum dikonfigurasi. Scheduler tidak akan bisa terhubung ke priva-gws.
+          </p>
+          <button
+            onClick={() => navigate('/settings')}
+            className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400 hover:underline shrink-0"
+          >
+            <Link size={12} /> Atur di Settings
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <div />
         <button
@@ -120,7 +145,19 @@ export default function SchedulerPage() {
             </button>
           </div>
           {createMut.isError && (
-            <p className="text-xs text-red-500">Failed to create scheduler.</p>
+            <div className="text-xs text-red-500 space-y-1">
+              <p>Failed to create scheduler.</p>
+              {(() => {
+                const err = createMut.error as { response?: { data?: { error?: { message?: string } }; status?: number }; message?: string }
+                const gwsMsg = err?.response?.data?.error?.message
+                const status = err?.response?.status
+                const noUrl = !err?.response && err?.message?.includes('Network')
+                if (noUrl) return <p>GWS Base URL belum dikonfigurasi. Atur di <strong>Settings → GWS Integration</strong>.</p>
+                if (gwsMsg) return <p>GWS: {gwsMsg}</p>
+                if (status) return <p>HTTP {status} dari GWS server.</p>
+                return null
+              })()}
+            </div>
           )}
         </div>
       )}
