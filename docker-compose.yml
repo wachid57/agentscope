@@ -1,9 +1,13 @@
+name: priva-agent
+
 services:
   # ── AgentScope Python core (agent_server.py HTTP server) ────────────────────
-  priva-agent-core:
+  core:
     build:
       context: ./core
       dockerfile: Dockerfile
+      tags:
+        - priva-agent-core
     container_name: priva-agent-core
     restart: unless-stopped
     # Run the dynamic agent HTTP server (not just idle)
@@ -58,10 +62,12 @@ services:
       retries: 5
 
   # ── Go/Fiber REST API backend ────────────────────────────────────────────────
-  priva-agent-backend:
+  backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      tags:
+        - priva-agent-backend
     container_name: priva-agent-backend
     restart: unless-stopped
     ports:
@@ -84,14 +90,16 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      priva-agent-core:
+      core:
         condition: service_started
 
   # ── React frontend (Nginx) ───────────────────────────────────────────────────
-  priva-agent-frontend:
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      tags:
+        - priva-agent-frontend
     container_name: priva-agent-frontend
     restart: unless-stopped
     ports:
@@ -99,7 +107,7 @@ services:
     networks:
       - priva-agent-net
     depends_on:
-      - priva-agent-backend
+      - backend
 
   # Optional: Redis for memory backend
   redis:

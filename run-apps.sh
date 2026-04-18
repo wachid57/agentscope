@@ -89,7 +89,7 @@ cmd_status() {
 }
 
 cmd_shell() {
-    local service="${1:-priva-agent-core}"
+    local service="${1:-core}"
     log "Opening shell in '$service'..."
     $COMPOSE exec "$service" sh 2>/dev/null || $COMPOSE exec "$service" bash
 }
@@ -98,7 +98,7 @@ cmd_shell() {
 
 cmd_web() {
     log "Starting web UI (backend + frontend)..."
-    $COMPOSE up -d priva-agent-backend priva-agent-frontend
+    $COMPOSE up -d backend frontend
     echo ""
     log "Web UI started:"
     log "  Frontend → http://localhost:3030"
@@ -110,7 +110,7 @@ cmd_web_dev() {
     echo ""
     # Start backend via Docker
     log "Starting backend container..."
-    $COMPOSE up -d priva-agent-backend
+    $COMPOSE up -d backend
     echo ""
     # Start frontend locally
     if [[ ! -d "frontend/node_modules" ]]; then
@@ -123,19 +123,19 @@ cmd_web_dev() {
 
 cmd_web_build() {
     log "Rebuilding web services (backend + frontend)..."
-    DOCKER_BUILDKIT=1 $COMPOSE build --pull --progress=plain priva-agent-backend priva-agent-frontend
+    DOCKER_BUILDKIT=1 $COMPOSE build --pull --progress=plain backend frontend
     log "Build complete. Run './run-apps.sh web' to start."
 }
 
 cmd_build_core() {
     log "Rebuilding PrivaAgent Python core (shows full pip install progress)..."
-    DOCKER_BUILDKIT=1 $COMPOSE build --no-cache --progress=plain priva-agent-core
+    DOCKER_BUILDKIT=1 $COMPOSE build --no-cache --progress=plain core
     log "Core build complete. Run './run-apps.sh start' to start."
 }
 
 cmd_web_logs() {
     log "Tailing backend + frontend logs..."
-    $COMPOSE logs -f --tail=100 priva-agent-backend priva-agent-frontend
+    $COMPOSE logs -f --tail=100 backend frontend
 }
 
 # ── Examples ──────────────────────────────────────────────────────────────────
@@ -154,7 +154,7 @@ cmd_run_example() {
         exit 0
     fi
     log "Running example: $example"
-    $COMPOSE run --rm priva-agent-core python "$example"
+    $COMPOSE run --rm core python "$example"
 }
 
 cmd_clean() {
@@ -180,7 +180,7 @@ usage() {
     echo "  restart [svc]     Restart services"
     echo "  logs [svc]        Tail logs (all or specific service)"
     echo "  status            Show running containers + access URLs"
-    echo "  shell [svc]       Open a shell (default: priva-agent-core)"
+    echo "  shell [svc]       Open a shell (default: core)"
     echo "  run-example       List or run a specific example script"
     echo "  clean             Remove containers, networks, and volumes"
     echo ""
@@ -192,9 +192,9 @@ usage() {
     echo "  build-core        Rebuild Python core image with full pip progress output"
     echo ""
     echo -e "${CYAN}Services:${NC}"
-    echo "  priva-agent-core  Python PrivaAgent runtime"
-    echo "  priva-agent-backend  Go/Fiber REST API  (port 8088)"
-    echo "  priva-agent-frontend React dashboard    (port 3030)"
+    echo "  core              Python PrivaAgent runtime"
+    echo "  backend           Go/Fiber REST API  (port 8088)"
+    echo "  frontend          React dashboard    (port 3030)"
     echo "  redis             Redis memory backend"
     echo "  jaeger            Tracing UI           (port 16686)"
     echo ""
@@ -202,8 +202,8 @@ usage() {
     echo "  $0 web                          # start web UI only"
     echo "  $0 web-dev                      # frontend hot-reload dev mode"
     echo "  $0 up                           # start everything"
-    echo "  $0 logs priva-agent-backend      # tail backend logs"
-    echo "  $0 shell priva-agent-backend     # shell into backend container"
+    echo "  $0 logs backend           # tail backend logs"
+    echo "  $0 shell backend          # shell into backend container"
     echo "  $0 run-example examples/workflows/multiagent_conversation/main.py"
     echo "  $0 down"
 }
