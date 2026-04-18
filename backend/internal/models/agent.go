@@ -6,10 +6,10 @@ import "time"
 type AgentType string
 
 const (
-	AgentTypeReAct    AgentType = "ReActAgent"
-	AgentTypeUser     AgentType = "UserAgent"
-	AgentTypeRealtime AgentType = "RealtimeAgent"
-	AgentTypeA2A      AgentType = "A2AAgent"
+	AgentTypeReAct    AgentType = "priva-agent-react"
+	AgentTypeUser     AgentType = "priva-agent-user"
+	AgentTypeRealtime AgentType = "priva-agent-realtime"
+	AgentTypeA2A      AgentType = "priva-agent-a2a"
 )
 
 // ModelProvider represents supported LLM providers

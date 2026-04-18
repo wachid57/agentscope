@@ -11,13 +11,13 @@ interface Props {
   onClose: () => void
 }
 
-const AGENT_TYPES = ['ReActAgent', 'UserAgent', 'RealtimeAgent', 'A2AAgent'] as const
+const AGENT_TYPES = ['priva-agent-react', 'priva-agent-user', 'priva-agent-realtime', 'priva-agent-a2a'] as const
 const MEMORY_TYPES = ['in_memory', 'redis', 'sql'] as const
 
 const defaultForm: CreateAgentRequest = {
   name: '',
   description: '',
-  type: 'ReActAgent',
+  type: 'priva-agent-react',
   sys_prompt: 'You are a helpful AI assistant.',
   model: { provider: 'openai', model_name: 'gpt-4o-mini', stream: true },
   tools: [],

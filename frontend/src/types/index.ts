@@ -1,4 +1,4 @@
-export type AgentType = 'ReActAgent' | 'UserAgent' | 'RealtimeAgent' | 'A2AAgent'
+export type AgentType = 'priva-agent-react' | 'priva-agent-user' | 'priva-agent-realtime' | 'priva-agent-a2a'
 export type AgentStatus = 'stopped' | 'running' | 'error'
 export type ModelProvider = 'openai' | 'anthropic' | 'dashscope' | 'gemini' | 'deepseek' | 'ollama' | 'openrouter'
 export type MemoryType = 'in_memory' | 'redis' | 'sql'
