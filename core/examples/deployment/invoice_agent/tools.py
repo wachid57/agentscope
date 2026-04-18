@@ -69,12 +69,10 @@ def check_sheet_changed(
     if not api_key:
         return json.dumps({"error": "No GWS_API_KEY provided"})
 
+    # Use google.drive.changes — direct metadata fetch by file ID, no content read.
     payload: dict[str, Any] = {
-        "action": "google.drive.list",
-        "params": {
-            "query": f"'{spreadsheet_id}' in parents or id='{spreadsheet_id}'",
-            "page_size": 1,
-        },
+        "action": "google.drive.changes",
+        "params": {"file_id": spreadsheet_id},
         "metadata": {},
     }
     if user_id:
@@ -97,21 +95,11 @@ def check_sheet_changed(
         return json.dumps({"error": str(e)})
 
     if body.get("status") != "success":
-        err = body.get("error", {})
-        return json.dumps({"error": err.get("message", "priva-gws error")})
-
-    files = body.get("data", {}).get("files", [])
-    # Drive list by query id='X' returns the file itself in results
-    modified_time = None
-    for f in files:
-        if f.get("id") == spreadsheet_id or not modified_time:
-            modified_time = f.get("modified_at") or f.get("modifiedTime")
-            break
-
-    if not modified_time:
-        # Fallback: file not found in list results — use a lightweight hash of
-        # a single-cell range to detect changes without reading all content.
+        # Fallback ke hash jika Drive API tidak tersedia
         return _check_sheet_hash(spreadsheet_id, base_url, api_key, user_id, tenant_id)
+
+    data = body.get("data", {})
+    modified_time = data.get("modified_at")
 
     state = _load_state()
     key = f"modified_time:{spreadsheet_id}"
