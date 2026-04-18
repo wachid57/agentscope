@@ -82,7 +82,7 @@ export default function SettingsPage() {
       const msg = e instanceof Error ? e.message : 'Gagal terhubung'
       setTestMsg(
         msg.includes('abort') || msg.includes('timed out')
-          ? 'Timeout — pastikan URL mengarah ke port backend API (bukan frontend, port default: 8083)'
+          ? 'Timeout — pastikan URL dan port benar (fe: 3001, be: 8083)'
           : `Tidak dapat terhubung: ${msg}`
       )
     }
@@ -197,9 +197,9 @@ export default function SettingsPage() {
                   className="input font-mono"
                   value={gws.baseUrl}
                   onChange={e => setGws(g => ({ ...g, baseUrl: e.target.value }))}
-                  placeholder="http://192.168.25.134:8083"
+                  placeholder="http://192.168.25.134:3001"
                 />
-                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>URL ke priva-gws <strong>backend</strong> API — bukan port frontend. Port default: <code className="font-mono">8083</code></p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>URL priva-gws — bisa pakai port frontend (3001) maupun backend langsung (8083)</p>
               </div>
               <div>
                 <label className="label">API Key</label>
