@@ -2,6 +2,26 @@ import { useQuery } from '@tanstack/react-query'
 import { Wrench, Tag } from 'lucide-react'
 import { systemApi } from '../api/system'
 
+const TAG_COLORS: Record<string, { bg: string; color: string; border: string }> = {
+  code:    { bg: '#ede9fe', color: '#7c3aed', border: '#c4b5fd' },
+  python:  { bg: '#fef9c3', color: '#a16207', border: '#fde047' },
+  shell:   { bg: '#ffedd5', color: '#c2410c', border: '#fed7aa' },
+  system:  { bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5' },
+  file:    { bg: '#dbeafe', color: '#1d4ed8', border: '#93c5fd' },
+  read:    { bg: '#dcfce7', color: '#15803d', border: '#86efac' },
+  write:   { bg: '#fce7f3', color: '#be185d', border: '#f9a8d4' },
+  network: { bg: '#cffafe', color: '#0e7490', border: '#67e8f9' },
+  ai:      { bg: '#f0fdf4', color: '#166534', border: '#bbf7d0' },
+  db:      { bg: '#fdf4ff', color: '#a21caf', border: '#e879f9' },
+}
+
+function tagStyle(tag: string) {
+  const palette = TAG_COLORS[tag.toLowerCase()]
+  if (palette) return { background: palette.bg, color: palette.color, boxShadow: `0 0 0 1px ${palette.border}` }
+  const hue = [...tag].reduce((n, c) => n + c.charCodeAt(0), 0) % 360
+  return { background: `hsl(${hue},70%,92%)`, color: `hsl(${hue},60%,35%)`, boxShadow: `0 0 0 1px hsl(${hue},60%,80%)` }
+}
+
 export default function ToolsPage() {
   const { data, isLoading } = useQuery({ queryKey: ['builtin-tools'], queryFn: systemApi.tools })
   const tools = data?.data ?? []
@@ -31,7 +51,7 @@ export default function ToolsPage() {
                 <div className="flex flex-wrap gap-1">
                   {tool.tags.map(t => (
                     <span key={t} className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md"
-                      style={{ color: 'var(--text-muted)', background: 'var(--bg-elevated)', boxShadow: '0 0 0 1px var(--border)' }}>
+                      style={tagStyle(t)}>
                       <Tag size={8} />{t}
                     </span>
                   ))}

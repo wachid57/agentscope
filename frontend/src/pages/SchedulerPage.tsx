@@ -7,7 +7,7 @@ import { systemApi } from '../api/system'
 import toast from 'react-hot-toast'
 
 function isApiDisabledError(msg: string) {
-  return msg.includes('SERVICE_DISABLED') || msg.includes('sheets.googleapis.com')
+  return msg.includes('SERVICE_DISABLED') || msg.includes('accessNotConfigured') || msg.includes('has not been used in project')
 }
 
 function extractEnableUrl(msg: string): string {
