@@ -57,13 +57,17 @@ export default function SettingsPage() {
     if (!url) { toast.error('GWS Base URL belum diisi'); return }
     setTestStatus('loading')
     setTestMsg('')
+
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 8000)
+
     try {
       const key = gws.apiKey.trim()
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (key) headers['Authorization'] = `Bearer ${key}`
 
-      // Gunakan endpoint schedulers yang butuh auth — lebih proper dari /health
-      const res = await fetch(`${url}/api/v1.0/schedulers`, { headers, signal: AbortSignal.timeout(5000) })
+      const res = await fetch(`${url}/api/v1.0/schedulers`, { headers, signal: controller.signal })
+      clearTimeout(timer)
       const json = await res.json()
 
       if (res.ok) {
@@ -78,13 +82,16 @@ export default function SettingsPage() {
         setTestMsg(`HTTP ${res.status}: ${json?.error?.message ?? 'Unknown error'}`)
       }
     } catch (e: unknown) {
+      clearTimeout(timer)
       setTestStatus('error')
       const msg = e instanceof Error ? e.message : 'Gagal terhubung'
-      setTestMsg(
-        msg.includes('abort') || msg.includes('timed out')
-          ? 'Timeout — pastikan URL dan port benar (fe: 3001, be: 8083)'
-          : `Tidak dapat terhubung: ${msg}`
-      )
+      if (msg === 'signal is aborted without reason' || msg.includes('abort') || msg.includes('timed out')) {
+        setTestMsg('Timeout (8s) — periksa URL dan port (fe: 3001, be: 8083)')
+      } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+        setTestMsg(`Tidak dapat terhubung ke ${url} — cek URL atau CORS`)
+      } else {
+        setTestMsg(msg)
+      }
     }
   }
 
