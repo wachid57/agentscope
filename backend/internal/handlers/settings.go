@@ -94,3 +94,69 @@ func (h *SettingsHandler) TestGWS(c *fiber.Ctx) error {
 		"message": fmt.Sprintf("Terhubung — %d scheduler ditemukan", len(gwsResp.Data)),
 	})
 }
+
+// POST /api/settings/test-scheduler/:id
+// Toggle scheduler on→off dari server side untuk trigger sekali jalan
+func (h *SettingsHandler) TestScheduler(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(400).JSON(fiber.Map{"ok": false, "message": "scheduler id required"})
+	}
+
+	settings, err := db.GetAllSettings()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"ok": false, "message": "failed to load settings"})
+	}
+
+	baseURL := strings.TrimRight(settings["gws_base_url"], "/")
+	apiKey := settings["gws_api_key"]
+	if baseURL == "" {
+		return c.Status(400).JSON(fiber.Map{"ok": false, "message": "GWS Base URL belum dikonfigurasi"})
+	}
+
+	httpClient := &http.Client{Timeout: 10 * time.Second}
+
+	doToggle := func() (map[string]interface{}, error) {
+		req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/v1.0/schedulers/%s/toggle", baseURL, id), nil)
+		if err != nil {
+			return nil, err
+		}
+		if apiKey != "" {
+			req.Header.Set("Authorization", "Bearer "+apiKey)
+		}
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		body, _ := io.ReadAll(resp.Body)
+		var result map[string]interface{}
+		json.Unmarshal(body, &result)
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
+		}
+		return result, nil
+	}
+
+	// Toggle on
+	res1, err := doToggle()
+	if err != nil {
+		return c.JSON(fiber.Map{"ok": false, "message": "Gagal toggle ON: " + err.Error()})
+	}
+
+	// Cek apakah sekarang aktif, kalau tidak toggle lagi
+	isActive := false
+	if data, ok := res1["data"].(map[string]interface{}); ok {
+		isActive, _ = data["is_active"].(bool)
+	}
+	status := "active"
+	if !isActive {
+		status = "inactive"
+	}
+
+	return c.JSON(fiber.Map{
+		"ok":        true,
+		"message":   fmt.Sprintf("Scheduler berhasil di-trigger (status: %s)", status),
+		"is_active": isActive,
+	})
+}
