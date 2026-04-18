@@ -74,6 +74,7 @@ func main() {
 	// Settings
 	api.Get("/settings", settingsH.GetSettings)
 	api.Put("/settings", settingsH.UpdateSettings)
+	api.Post("/settings/test-gws", settingsH.TestGWS)
 
 	// Agents
 	agents := api.Group("/agents")

@@ -57,37 +57,22 @@ export default function SettingsPage() {
     if (!url) { toast.error('GWS Base URL belum diisi'); return }
     setTestStatus('loading')
     setTestMsg('')
-
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 8000)
-
     try {
-      const key = gws.apiKey.trim()
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (key) headers['Authorization'] = `Bearer ${key}`
-
-      // Test via proxy nginx /gws/ untuk hindari Chrome PNA block
-      const res = await fetch(`/gws/api/v1.0/schedulers`, { headers, signal: controller.signal })
-      clearTimeout(timer)
+      // Simpan dulu ke DB agar backend bisa baca nilai terbaru
+      await systemApi.updateSettings({ gws_base_url: url, gws_api_key: gws.apiKey.trim() })
+      // Test dari server side — tidak kena CORS/PNA browser
+      const res = await fetch('/api/settings/test-gws', { method: 'POST' })
       const json = await res.json()
-
-      if (res.ok) {
-        const count = Array.isArray(json?.data) ? json.data.length : '?'
+      if (json.ok) {
         setTestStatus('ok')
-        setTestMsg(`Terhubung — ${count} scheduler ditemukan`)
-      } else if (res.status === 401 || json?.error?.code === 'UNAUTHORIZED') {
-        setTestStatus('error')
-        setTestMsg('Unauthorized — API Key salah atau tidak valid')
+        setTestMsg(json.message)
       } else {
         setTestStatus('error')
-        setTestMsg(`HTTP ${res.status}: ${json?.error?.message ?? 'Unknown error'}`)
+        setTestMsg(json.message)
       }
     } catch (e: unknown) {
-      clearTimeout(timer)
       setTestStatus('error')
-      const msg = e instanceof Error ? e.message : String(e)
-      console.error('[GWS Test] error:', e)
-      setTestMsg(msg || 'Unknown error')
+      setTestMsg('Gagal menghubungi backend')
     }
   }
 
