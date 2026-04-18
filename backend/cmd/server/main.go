@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/agentscope/web-backend/internal/db"
 	"github.com/agentscope/web-backend/internal/handlers"
 	"github.com/agentscope/web-backend/internal/store"
 	"github.com/gofiber/fiber/v2"
@@ -16,7 +17,13 @@ func main() {
 	// Config from env
 	port := getEnv("PORT", "8080")
 	dataDir := getEnv("DATA_DIR", "./data")
-	agentscopeURL := getEnv("AGENTSCOPE_URL", "") // e.g. http://agentscope:5000
+	agentscopeURL := getEnv("AGENTSCOPE_URL", "")
+	databaseURL := getEnv("DATABASE_URL", "")
+
+	// Init PostgreSQL
+	if err := db.Init(databaseURL); err != nil {
+		log.Fatalf("failed to init database: %v", err)
+	}
 
 	// Init store
 	s, err := store.New(dataDir)
@@ -51,6 +58,7 @@ func main() {
 	sessionH := handlers.NewSessionHandler(s, agentscopeURL)
 	systemH := handlers.NewSystemHandler(s)
 	resourcesH := handlers.NewResourcesHandler(s, agentscopeURL, redisAddr, dataDir)
+	settingsH := handlers.NewSettingsHandler()
 
 	// Routes
 	app.Get("/health", systemH.Health)
@@ -62,6 +70,10 @@ func main() {
 	api.Get("/providers", systemH.ListModelProviders)
 	api.Get("/tools", systemH.ListBuiltinTools)
 	api.Get("/resources", resourcesH.GetResources)
+
+	// Settings
+	api.Get("/settings", settingsH.GetSettings)
+	api.Put("/settings", settingsH.UpdateSettings)
 
 	// Agents
 	agents := api.Group("/agents")

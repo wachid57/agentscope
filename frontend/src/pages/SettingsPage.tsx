@@ -1,10 +1,46 @@
-import { useState } from 'react'
-import { Settings, Bell, Globe, Database, Trash2, Save } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Settings, Bell, Globe, Database, Trash2, Save, Webhook } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSetNavSubtitle } from '../context/NavSubtitle'
+import { systemApi } from '../api/system'
+import { invalidateGwsCache } from '../api/gws'
 
 export default function SettingsPage() {
   useSetNavSubtitle('Configure your AgentScope instance')
+
+  const qc = useQueryClient()
+
+  const { data: dbSettings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: systemApi.getSettings,
+  })
+
+  const [gws, setGws] = useState({ baseUrl: '', apiKey: '' })
+
+  useEffect(() => {
+    if (dbSettings) {
+      setGws({
+        baseUrl: dbSettings['gws_base_url'] ?? '',
+        apiKey:  dbSettings['gws_api_key']  ?? '',
+      })
+    }
+  }, [dbSettings])
+
+  const gwsMut = useMutation({
+    mutationFn: (data: Record<string, string>) => systemApi.updateSettings(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['settings'] })
+      invalidateGwsCache()
+      toast.success('GWS settings saved')
+    },
+    onError: () => toast.error('Failed to save GWS settings'),
+  })
+
+  const saveGws = (e: React.FormEvent) => {
+    e.preventDefault()
+    gwsMut.mutate({ gws_base_url: gws.baseUrl.trim(), gws_api_key: gws.apiKey.trim() })
+  }
 
   const [general, setGeneral] = useState({
     siteName: 'AgentScope',
@@ -126,6 +162,46 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* GWS Integration */}
+        <div className="card">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-elevated)' }}>
+              <Webhook size={15} className="text-brand-500" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>GWS Integration</h3>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>priva-gws API for Scheduler feature</p>
+            </div>
+          </div>
+          <form onSubmit={saveGws} className="space-y-4">
+            <div>
+              <label className="label">GWS Base URL</label>
+              <input
+                className="input font-mono"
+                value={gws.baseUrl}
+                onChange={e => setGws(g => ({ ...g, baseUrl: e.target.value }))}
+                placeholder="http://localhost:8090"
+              />
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>URL langsung ke priva-gws backend (tanpa trailing slash)</p>
+            </div>
+            <div>
+              <label className="label">API Key</label>
+              <input
+                className="input font-mono"
+                type="password"
+                value={gws.apiKey}
+                onChange={e => setGws(g => ({ ...g, apiKey: e.target.value }))}
+                placeholder="Bearer token"
+              />
+            </div>
+            <div className="flex justify-end pt-2">
+              <button type="submit" className="btn-primary">
+                <Save size={14} /> Save GWS Settings
+              </button>
+            </div>
+          </form>
         </div>
 
         {/* Data management */}

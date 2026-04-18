@@ -1,14 +1,32 @@
 import axios from 'axios'
+import client from './client'
 
-// Client ke priva-gws via nginx proxy /gws/
+// Cache settings in memory, refreshed on first use per session
+let _cache: Record<string, string> | null = null
+
+async function getGwsSettings(): Promise<Record<string, string>> {
+  if (_cache) return _cache
+  try {
+    const res = await client.get<{ data: Record<string, string> }>('/settings')
+    _cache = res.data.data ?? {}
+  } catch {
+    _cache = {}
+  }
+  return _cache
+}
+
+export function invalidateGwsCache() {
+  _cache = null
+}
+
 const gwsClient = axios.create({
-  baseURL: '/gws',
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Inject API key from env or localStorage
-gwsClient.interceptors.request.use(cfg => {
-  const key = localStorage.getItem('gws_api_key') || import.meta.env.VITE_GWS_API_KEY || ''
+gwsClient.interceptors.request.use(async cfg => {
+  const settings = await getGwsSettings()
+  cfg.baseURL = settings['gws_base_url'] ?? ''
+  const key = settings['gws_api_key'] ?? ''
   if (key) cfg.headers['Authorization'] = `Bearer ${key}`
   return cfg
 })
