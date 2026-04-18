@@ -38,7 +38,7 @@ const emptyForm: CreateSchedulerPayload = {
   name: '', spreadsheet_id: '', sheet_range: '',
   check_mode: 'sheets', drive_file_id: '',
   interval_seconds: 300, webhook_url: '', webhook_secret: '',
-  trigger_type: 'webhook', agent_id: '',
+  trigger_type: 'webhook', agent_id: '', trigger_message: '',
   is_active: true,
 }
 
@@ -85,7 +85,7 @@ function SchedulerModal({ initial, onClose, onSave, saving }: {
   onSave: (id: string | undefined, data: CreateSchedulerPayload) => void
   saving: boolean
 }) {
-  const [form, setForm] = useState<CreateSchedulerPayload>({ ...initial, trigger_type: initial.trigger_type ?? 'webhook', agent_id: initial.agent_id ?? '' })
+  const [form, setForm] = useState<CreateSchedulerPayload>({ ...initial, trigger_type: initial.trigger_type ?? 'webhook', agent_id: initial.agent_id ?? '', trigger_message: initial.trigger_message ?? '' })
   const [testResult, setTestResult] = useState<TestResult>(null)
   const [testing, setTesting] = useState(false)
   const set = (k: keyof CreateSchedulerPayload, v: unknown) => setForm(f => ({ ...f, [k]: v }))
@@ -211,21 +211,39 @@ function SchedulerModal({ initial, onClose, onSave, saving }: {
 
             {/* Agent picker */}
             {form.trigger_type === 'agent' && (
-              <div className="md:col-span-2">
-                <label className="label">Pilih Agent</label>
-                <select
-                  className="input"
-                  value={form.agent_id}
-                  onChange={e => set('agent_id', e.target.value)}
-                >
-                  <option value="">— Pilih Agent —</option>
-                  {(agentsData?.data ?? []).map(a => (
-                    <option key={a.id} value={a.id}>{a.name} ({a.type})</option>
-                  ))}
-                </select>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Agent akan di-start secara otomatis saat ada perubahan pada file.
-                </p>
+              <div className="md:col-span-2 space-y-3">
+                <div>
+                  <label className="label">Pilih Agent</label>
+                  <select
+                    className="input"
+                    value={form.agent_id}
+                    onChange={e => set('agent_id', e.target.value)}
+                  >
+                    <option value="">— Pilih Agent —</option>
+                    {(agentsData?.data ?? []).map(a => (
+                      <option key={a.id} value={a.id}>{a.name} ({a.type})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="label">Pesan Trigger</label>
+                  <textarea
+                    className="input min-h-[96px] resize-y font-mono text-xs"
+                    value={form.trigger_message}
+                    onChange={e => set('trigger_message', e.target.value)}
+                    placeholder={
+                      '[AUTO TRIGGER] File Google Sheets berubah. Spreadsheet ID: {{spreadsheet_id}}, Range: {{range}}.\nTolong baca data terbaru dari sheet tersebut dan proses sesuai tugasmu.'
+                    }
+                  />
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                    Placeholder tersedia: <code className="text-[10px] px-1 rounded" style={{ background: 'var(--bg-elevated)' }}>{'{{spreadsheet_id}}'}</code>{' '}
+                    <code className="text-[10px] px-1 rounded" style={{ background: 'var(--bg-elevated)' }}>{'{{range}}'}</code>{' '}
+                    <code className="text-[10px] px-1 rounded" style={{ background: 'var(--bg-elevated)' }}>{'{{scheduler_name}}'}</code>{' '}
+                    <code className="text-[10px] px-1 rounded" style={{ background: 'var(--bg-elevated)' }}>{'{{scheduler_id}}'}</code>.
+                    Kosongkan untuk pakai pesan default.
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -264,7 +282,7 @@ function SchedulerModal({ initial, onClose, onSave, saving }: {
             ) : <div />}
 
             <div className="flex gap-2">
-              <button onClick={onClose} className="btn-secondary text-sm">Cancel</button>
+              <button onClick={onClose} className="btn-outline text-sm">Cancel</button>
               <button
                 onClick={() => onSave(initial.id, form)}
                 disabled={saving || !form.name}

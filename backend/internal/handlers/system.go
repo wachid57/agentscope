@@ -101,7 +101,61 @@ func (h *SystemHandler) ListModelProviders(c *fiber.Ctx) error {
 		{
 			"id":          "openrouter",
 			"name":        "OpenRouter",
-			"models":      []string{"meta-llama/llama-3.3-70b-instruct", "mistralai/mixtral-8x7b-instruct"},
+			"models": []string{
+					// ── Anthropic
+					"anthropic/claude-opus-4-7",
+					"anthropic/claude-opus-4-6",
+					"anthropic/claude-opus-4-6-fast",
+					"anthropic/claude-sonnet-4-6",
+					// ── OpenAI
+					"openai/gpt-5-4-pro",
+					"openai/gpt-5-4",
+					"openai/gpt-5-4-mini",
+					"openai/gpt-5-4-nano",
+					"openai/gpt-oss-120b:free",
+					"openai/gpt-oss-20b:free",
+					// ── Google
+					"google/gemini-3-1-pro-preview",
+					"google/gemini-3-1-flash-lite-preview",
+					"google/gemini-3-flash-preview",
+					"google/gemma-4-31b-it:free",
+					"google/gemma-4-26b-a4b-it:free",
+					"google/gemma-3-27b-it:free",
+					"google/gemma-3-12b-it:free",
+					"google/gemma-3-4b-it:free",
+					"google/gemma-3n-e4b-it:free",
+					"google/gemma-3n-e2b-it:free",
+					// ── Meta Llama
+					"meta-llama/llama-3.3-70b-instruct:free",
+					"meta-llama/llama-3.2-3b-instruct:free",
+					// ── Qwen
+					"qwen/qwen3-6-plus",
+					"qwen/qwen3-5-122b-a10b",
+					"qwen/qwen3-5-35b-a3b",
+					"qwen/qwen3-5-27b",
+					"qwen/qwen3-coder:free",
+					"qwen/qwen3-next-80b-a3b-instruct:free",
+					// ── Mistral
+					"mistralai/mistral-small-2603",
+					"mistralai/devstral-2512",
+					// ── xAI
+					"x-ai/grok-4-20",
+					// ── Nvidia
+					"nvidia/nemotron-3-super-120b-a12b:free",
+					"nvidia/nemotron-3-nano-30b-a3b:free",
+					"nvidia/nemotron-nano-12b-v2-vl:free",
+					"nvidia/nemotron-nano-9b-v2:free",
+					// ── Others (free)
+					"minimax/minimax-m2.5:free",
+					"nousresearch/hermes-3-llama-3.1-405b:free",
+					"z-ai/glm-4.5-air:free",
+					"z-ai/glm-5-1",
+					"z-ai/glm-5-turbo",
+					"cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+					"liquid/lfm-2.5-1.2b-thinking:free",
+					"liquid/lfm-2.5-1.2b-instruct:free",
+					"arcee-ai/trinity-large-preview:free",
+				},
 			"env_key":     "OPENROUTER_API_KEY",
 			"description": "200+ models via OpenRouter",
 			"base_url":    "https://openrouter.ai/api/v1",
