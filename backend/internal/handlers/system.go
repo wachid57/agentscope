@@ -102,52 +102,47 @@ func (h *SystemHandler) ListModelProviders(c *fiber.Ctx) error {
 			"id":          "openrouter",
 			"name":        "OpenRouter",
 			"models": []string{
-					// ── Anthropic Claude
+					// ── Anthropic Claude (paid, reliable)
+					"anthropic/claude-opus-4.7",
 					"anthropic/claude-opus-4-6",
 					"anthropic/claude-sonnet-4-6",
 					"anthropic/claude-haiku-4-5-20251001",
-					// ── OpenAI
+					// ── OpenAI (paid)
 					"openai/gpt-4o",
 					"openai/gpt-4-turbo",
 					"openai/gpt-4",
 					"openai/gpt-4o-mini",
-					"openai/gpt-oss-120b:free",
-					// ── Google Gemini & Gemma
+					// ── Google Gemini (paid)
 					"google/gemini-2.0-flash-exp",
 					"google/gemini-1.5-pro",
 					"google/gemini-1.5-flash",
-					"google/gemma-4-31b-it:free",
-					// ── Meta Llama
-					"meta-llama/llama-3.3-70b-instruct:free",
-					"meta-llama/llama-3.1-405b-instruct:free",
+					// ── Meta Llama (free, working)
 					"meta-llama/llama-3.1-70b-instruct:free",
 					"meta-llama/llama-3.1-8b-instruct:free",
-					// ── Alibaba Qwen
-					"qwen/qwen3.5-max",
-					"qwen/qwen3.5-plus",
-					"qwen/qwen3.5-turbo",
-					// ── NVIDIA (free)
+					"meta-llama/llama-3.3-70b-instruct:free",
+					// ── Alibaba Qwen (paid)
+					"qwen/qwen3-6-plus",
+					"qwen/qwen3-5-122b-a10b",
+					// ── NVIDIA Nemotron (free, tested working ✓)
 					"nvidia/nemotron-3-super-120b-a12b:free",
 					"nvidia/nemotron-3-nano-30b-a3b:free",
 					"nvidia/nemotron-nano-9b-v2:free",
-					// ── Mistral
+					// ── Mistral (paid)
 					"mistralai/mistral-large-2411",
-					"mistralai/mistral-small-2603:free",
+					"mistralai/mistral-small-2603",
 					// ── Other Free Models
 					"z-ai/glm-4.5-air:free",
 					"arcee-ai/trinity-large-preview:free",
 					"minimax/minimax-m2.5:free",
-					"nousresearch/nous-hermes-3-llama-3.1-405b:free",
-					// ── xAI Grok
-					"x-ai/grok-3",
-					// ── DeepSeek
+					"liquid/lfm-2.5-1.2b-instruct:free",
+					// ── DeepSeek (paid)
 					"deepseek/deepseek-chat",
-					"deepseek/deepseek-coder",
-					// ── Others
+					// ── xAI Grok (paid)
+					"x-ai/grok-3",
+					// ── Cohere (paid)
 					"cohere/command-r-plus",
-					"cohere/command-r",
+					// ── Others (paid)
 					"01-ai/yi-large-turbo",
-					"perplexity/llama-3.1-sonar-large-128k-online:free",
 				},
 			"env_key":     "OPENROUTER_API_KEY",
 			"description": "200+ models via OpenRouter",
