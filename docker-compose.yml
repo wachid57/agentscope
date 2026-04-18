@@ -1,10 +1,10 @@
 services:
   # ── AgentScope Python core (agent_server.py HTTP server) ────────────────────
-  agentscope:
+  priva-agent-core:
     build:
       context: ./core
       dockerfile: Dockerfile
-    container_name: agentscope-app
+    container_name: priva-agent-core
     restart: unless-stopped
     # Run the dynamic agent HTTP server (not just idle)
     command: python agent_server.py
@@ -27,10 +27,10 @@ services:
       - ./core/examples:/app/examples
       - ./core/agent_server.py:/app/agent_server.py
       # Persist sessions and data
-      - agentscope-data:/app/data
-      - agentscope-sessions:/app/sessions
+      - priva-agent-data:/app/data
+      - priva-agent-sessions:/app/sessions
     networks:
-      - agentscope-net
+      - priva-agent-net
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
       interval: 20s
@@ -41,40 +41,40 @@ services:
   # ── PostgreSQL ───────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
-    container_name: agentscope-postgres
+    container_name: priva-agent-postgres
     restart: unless-stopped
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-agentscope}
-      - POSTGRES_USER=${POSTGRES_USER:-agentscope}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-agentscope}
+      - POSTGRES_DB=${POSTGRES_DB:-priva-agent}
+      - POSTGRES_USER=${POSTGRES_USER:-priva-agent}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-priva-agent}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - agentscope-net
+      - priva-agent-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agentscope}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-priva-agent}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   # ── Go/Fiber REST API backend ────────────────────────────────────────────────
-  agentscope-backend:
+  priva-agent-backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: agentscope-backend
+    container_name: priva-agent-backend
     restart: unless-stopped
     ports:
       - "8088:8080"
     environment:
       - PORT=8080
       - DATA_DIR=/app/data
-      - AGENTSCOPE_URL=http://agentscope:5001
-      - DATABASE_URL=postgres://${POSTGRES_USER:-agentscope}:${POSTGRES_PASSWORD:-agentscope}@postgres:5432/${POSTGRES_DB:-agentscope}?sslmode=disable
+      - AGENTSCOPE_URL=http://priva-agent-core:5001
+      - DATABASE_URL=postgres://${POSTGRES_USER:-priva-agent}:${POSTGRES_PASSWORD:-priva-agent}@postgres:5432/${POSTGRES_DB:-priva-agent}?sslmode=disable
     volumes:
       - backend-data:/app/data
     networks:
-      - agentscope-net
+      - priva-agent-net
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
       interval: 15s
@@ -84,34 +84,34 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      agentscope:
+      priva-agent-core:
         condition: service_started
 
   # ── React frontend (Nginx) ───────────────────────────────────────────────────
-  agentscope-frontend:
+  priva-agent-frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: agentscope-frontend
+    container_name: priva-agent-frontend
     restart: unless-stopped
     ports:
       - "3030:80"
     networks:
-      - agentscope-net
+      - priva-agent-net
     depends_on:
-      - agentscope-backend
+      - priva-agent-backend
 
   # Optional: Redis for memory backend
   redis:
     image: redis:7-alpine
-    container_name: agentscope-redis
+    container_name: priva-agent-redis
     restart: unless-stopped
  #   ports:
  #     - "6379:6379"
     volumes:
       - redis-data:/data
     networks:
-      - agentscope-net
+      - priva-agent-net
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -121,7 +121,7 @@ services:
   # Optional: Jaeger for OpenTelemetry tracing
   jaeger:
     image: jaegertracing/all-in-one:latest
-    container_name: agentscope-jaeger
+    container_name: priva-agent-jaeger
     restart: unless-stopped
     ports:
       - "16686:16686"   # Jaeger UI
@@ -130,15 +130,15 @@ services:
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     networks:
-      - agentscope-net
+      - priva-agent-net
 
 volumes:
-  agentscope-data:
-  agentscope-sessions:
+  priva-agent-data:
+  priva-agent-sessions:
   redis-data:
   backend-data:
   postgres-data:
 
 networks:
-  agentscope-net:
+  priva-agent-net:
     driver: bridge

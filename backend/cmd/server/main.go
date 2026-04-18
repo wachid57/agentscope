@@ -51,7 +51,7 @@ func main() {
 	}))
 
 	// Config from env
-	redisAddr := getEnv("REDIS_ADDR", "agentscope-redis:6379")
+	redisAddr := getEnv("REDIS_ADDR", "priva-agent-redis:6379")
 
 	// Handlers
 	agentH := handlers.NewAgentHandler(s)

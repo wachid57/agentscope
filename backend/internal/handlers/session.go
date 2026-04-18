@@ -19,7 +19,7 @@ import (
 // SessionHandler handles session-related requests
 type SessionHandler struct {
 	store         *store.Store
-	agentscopeURL string // e.g. http://agentscope-core:5001
+	agentscopeURL string // e.g. http://priva-agent-core:5001
 }
 
 // NewSessionHandler creates a new SessionHandler
