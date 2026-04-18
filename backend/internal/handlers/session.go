@@ -177,6 +177,15 @@ func (h *SessionHandler) Chat(c *fiber.Ctx) error {
 				if err := scanner.Err(); err != nil {
 					h.store.AddLog(agentID, sess.ID, "error", "Stream read error: "+err.Error())
 				}
+
+				// If Python core returned nothing (e.g. rate limit / API error), send a readable error chunk
+				if assistantContent.Len() == 0 {
+					errContent := "⚠️ **Model tidak merespons.** Kemungkinan penyebab:\n- Rate limit model gratis (coba beberapa saat lagi)\n- API key tidak valid atau belum diset\n- Model sedang tidak tersedia\n\nCoba ganti model di konfigurasi agent, atau tambahkan API key OpenRouter."
+					assistantContent.WriteString(errContent)
+					errData, _ := json.Marshal(map[string]string{"content": errContent})
+					fmt.Fprintf(w, "data: %s\n\n", string(errData))
+					w.Flush()
+				}
 			}
 		} else {
 			// ── Simulation mode ───────────────────────────────────────────

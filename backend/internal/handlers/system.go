@@ -80,14 +80,14 @@ func (h *SystemHandler) ListModelProviders(c *fiber.Ctx) error {
 		{
 			"id":          "dashscope",
 			"name":        "DashScope (Qwen)",
-			"models":      []string{"qwen-max", "qwen3-max", "qwen-turbo", "qwen-plus"},
+			"models":      []string{"qwen3.5-max", "qwen3.5-plus", "qwen3.5-turbo", "qwen-max", "qwen-turbo"},
 			"env_key":     "DASHSCOPE_API_KEY",
 			"description": "Alibaba Qwen models via DashScope",
 		},
 		{
 			"id":          "gemini",
 			"name":        "Google Gemini",
-			"models":      []string{"gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash"},
+			"models":      []string{"gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro"},
 			"env_key":     "GEMINI_API_KEY",
 			"description": "Google Gemini models",
 		},
@@ -102,59 +102,52 @@ func (h *SystemHandler) ListModelProviders(c *fiber.Ctx) error {
 			"id":          "openrouter",
 			"name":        "OpenRouter",
 			"models": []string{
-					// ── Anthropic
-					"anthropic/claude-opus-4-7",
+					// ── Anthropic Claude
 					"anthropic/claude-opus-4-6",
-					"anthropic/claude-opus-4-6-fast",
 					"anthropic/claude-sonnet-4-6",
+					"anthropic/claude-haiku-4-5-20251001",
 					// ── OpenAI
-					"openai/gpt-5-4-pro",
-					"openai/gpt-5-4",
-					"openai/gpt-5-4-mini",
-					"openai/gpt-5-4-nano",
+					"openai/gpt-4o",
+					"openai/gpt-4-turbo",
+					"openai/gpt-4",
+					"openai/gpt-4o-mini",
 					"openai/gpt-oss-120b:free",
-					"openai/gpt-oss-20b:free",
-					// ── Google
-					"google/gemini-3-1-pro-preview",
-					"google/gemini-3-1-flash-lite-preview",
-					"google/gemini-3-flash-preview",
+					// ── Google Gemini & Gemma
+					"google/gemini-2.0-flash-exp",
+					"google/gemini-1.5-pro",
+					"google/gemini-1.5-flash",
 					"google/gemma-4-31b-it:free",
-					"google/gemma-4-26b-a4b-it:free",
-					"google/gemma-3-27b-it:free",
-					"google/gemma-3-12b-it:free",
-					"google/gemma-3-4b-it:free",
-					"google/gemma-3n-e4b-it:free",
-					"google/gemma-3n-e2b-it:free",
 					// ── Meta Llama
 					"meta-llama/llama-3.3-70b-instruct:free",
-					"meta-llama/llama-3.2-3b-instruct:free",
-					// ── Qwen
-					"qwen/qwen3-6-plus",
-					"qwen/qwen3-5-122b-a10b",
-					"qwen/qwen3-5-35b-a3b",
-					"qwen/qwen3-5-27b",
-					"qwen/qwen3-coder:free",
-					"qwen/qwen3-next-80b-a3b-instruct:free",
-					// ── Mistral
-					"mistralai/mistral-small-2603",
-					"mistralai/devstral-2512",
-					// ── xAI
-					"x-ai/grok-4-20",
-					// ── Nvidia
+					"meta-llama/llama-3.1-405b-instruct:free",
+					"meta-llama/llama-3.1-70b-instruct:free",
+					"meta-llama/llama-3.1-8b-instruct:free",
+					// ── Alibaba Qwen
+					"qwen/qwen3.5-max",
+					"qwen/qwen3.5-plus",
+					"qwen/qwen3.5-turbo",
+					// ── NVIDIA (free)
 					"nvidia/nemotron-3-super-120b-a12b:free",
 					"nvidia/nemotron-3-nano-30b-a3b:free",
-					"nvidia/nemotron-nano-12b-v2-vl:free",
 					"nvidia/nemotron-nano-9b-v2:free",
-					// ── Others (free)
-					"minimax/minimax-m2.5:free",
-					"nousresearch/hermes-3-llama-3.1-405b:free",
+					// ── Mistral
+					"mistralai/mistral-large-2411",
+					"mistralai/mistral-small-2603:free",
+					// ── Other Free Models
 					"z-ai/glm-4.5-air:free",
-					"z-ai/glm-5-1",
-					"z-ai/glm-5-turbo",
-					"cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
-					"liquid/lfm-2.5-1.2b-thinking:free",
-					"liquid/lfm-2.5-1.2b-instruct:free",
 					"arcee-ai/trinity-large-preview:free",
+					"minimax/minimax-m2.5:free",
+					"nousresearch/nous-hermes-3-llama-3.1-405b:free",
+					// ── xAI Grok
+					"x-ai/grok-3",
+					// ── DeepSeek
+					"deepseek/deepseek-chat",
+					"deepseek/deepseek-coder",
+					// ── Others
+					"cohere/command-r-plus",
+					"cohere/command-r",
+					"01-ai/yi-large-turbo",
+					"perplexity/llama-3.1-sonar-large-128k-online:free",
 				},
 			"env_key":     "OPENROUTER_API_KEY",
 			"description": "200+ models via OpenRouter",

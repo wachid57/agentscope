@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { X, Plus, Trash2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { X, Plus, Trash2, Search, ChevronDown } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { agentsApi } from '../api/agents'
@@ -31,6 +31,19 @@ export default function AgentFormModal({ agent, onClose }: Props) {
 
   const [form, setForm] = useState<CreateAgentRequest>(defaultForm)
   const [tagInput, setTagInput] = useState('')
+  const [modelSearch, setModelSearch] = useState('')
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false)
+  const modelDropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
+        setModelDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const { data: provData } = useQuery({ queryKey: ['providers'], queryFn: systemApi.providers })
   const { data: toolData } = useQuery({ queryKey: ['builtin-tools'], queryFn: systemApi.tools })
@@ -195,14 +208,61 @@ export default function AgentFormModal({ agent, onClose }: Props) {
               <div>
                 <label className="label">Model Name</label>
                 {selectedProvider ? (
-                  <select
-                    className="input"
-                    value={form.model.model_name}
-                    onChange={e => setForm(f => ({ ...f, model: { ...f.model, model_name: e.target.value } }))}
-                  >
-                    <option value="">Select model...</option>
-                    {selectedProvider.models.map(m => <option key={m} value={m}>{m}</option>)}
-                  </select>
+                  <div className="relative" ref={modelDropdownRef}>
+                    <button
+                      type="button"
+                      className="input flex items-center justify-between w-full text-left"
+                      onClick={() => setModelDropdownOpen(o => !o)}
+                    >
+                      <span className={form.model.model_name ? '' : 'opacity-40'} style={{ color: 'var(--text-primary)' }}>
+                        {form.model.model_name || 'Select model...'}
+                      </span>
+                      <ChevronDown size={14} className={`flex-shrink-0 ml-2 transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} style={{ color: 'var(--text-muted)' }} />
+                    </button>
+                    {modelDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-1 rounded-xl border shadow-dropdown overflow-hidden"
+                        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
+                        <div className="p-2 border-b" style={{ borderColor: 'var(--border)' }}>
+                          <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: 'var(--bg-base)' }}>
+                            <Search size={13} style={{ color: 'var(--text-muted)' }} />
+                            <input
+                              autoFocus
+                              className="flex-1 bg-transparent text-xs outline-none"
+                              style={{ color: 'var(--text-primary)' }}
+                              placeholder="Search model..."
+                              value={modelSearch}
+                              onChange={e => setModelSearch(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="overflow-y-auto max-h-48">
+                          {selectedProvider.models
+                            .filter(m => m.toLowerCase().includes(modelSearch.toLowerCase()))
+                            .map(m => (
+                              <button
+                                key={m}
+                                type="button"
+                                className="w-full text-left px-3 py-2 text-xs transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+                                style={{
+                                  color: form.model.model_name === m ? 'var(--brand)' : 'var(--text-primary)',
+                                  fontWeight: form.model.model_name === m ? 600 : 400,
+                                }}
+                                onClick={() => {
+                                  setForm(f => ({ ...f, model: { ...f.model, model_name: m } }))
+                                  setModelDropdownOpen(false)
+                                  setModelSearch('')
+                                }}
+                              >
+                                {m}
+                              </button>
+                            ))}
+                          {selectedProvider.models.filter(m => m.toLowerCase().includes(modelSearch.toLowerCase())).length === 0 && (
+                            <p className="text-xs px-3 py-4 text-center" style={{ color: 'var(--text-muted)' }}>No models found</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <input
                     className="input"

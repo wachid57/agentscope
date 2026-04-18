@@ -6,8 +6,7 @@ services:
     build:
       context: ./core
       dockerfile: Dockerfile
-      tags:
-        - priva-agent-core
+    image: priva-agent-core
     container_name: priva-agent-core
     restart: unless-stopped
     # Run the dynamic agent HTTP server (not just idle)
@@ -66,8 +65,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      tags:
-        - priva-agent-backend
+    image: priva-agent-backend
     container_name: priva-agent-backend
     restart: unless-stopped
     ports:
@@ -98,8 +96,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      tags:
-        - priva-agent-frontend
+    image: priva-agent-frontend
     container_name: priva-agent-frontend
     restart: unless-stopped
     ports:
