@@ -58,6 +58,7 @@ export interface Scheduler {
   last_checked_at: string | null
   trigger_count: number
   error_msg: string
+  file_created_at: string | null
   file_modified_at: string | null
   created_at: string
   updated_at: string

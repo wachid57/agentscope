@@ -398,7 +398,13 @@ export default function SchedulerPage() {
                     Jadwal dibuat: {formatDate(s.created_at)}
                   </span>
 
-                  {/* File modified (from Drive) */}
+                  {/* File metadata (from Drive) */}
+                  {s.file_created_at && (
+                    <span className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                      <CalendarDays size={10} />
+                      File dibuat: {formatDate(s.file_created_at)}
+                    </span>
+                  )}
                   {s.file_modified_at && (
                     <span className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
                       <RefreshCw size={10} />
