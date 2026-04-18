@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useNavSubtitle } from '../context/NavSubtitle'
 import { useNavActions } from '../context/NavActions'
+import { systemApi } from '../api/system'
 import {
   LayoutDashboard, Bot, Wrench, ChevronLeft, ChevronRight,
   Bell, Settings, LogOut, User, ChevronDown, Menu, Zap,
@@ -44,7 +46,10 @@ const nav: NavItem[] = [
   },
   {
     kind: 'group', icon: MonitorDot, label: 'System', key: 'system',
-    children: [{ to: '/system/resources', icon: HardDrive, label: 'Resources' }],
+    children: [
+      { to: '/system/resources', icon: HardDrive, label: 'Resources' },
+      { to: '/settings',         icon: Settings,  label: 'Settings'    },
+    ],
   },
 ]
 
@@ -59,10 +64,10 @@ function usePageMeta() {
   if (pathname.startsWith('/tools/list'))       return { title: 'Tools',        sub: '' }
   if (pathname.startsWith('/tools'))            return { title: 'Tools',        sub: '' }
   if (pathname.startsWith('/system/resources')) return { title: 'Resources',    sub: '' }
-  if (pathname.startsWith('/dashboard'))        return { title: 'Dashboard',    sub: 'Monitor your AgentScope deployment in real-time' }
+  if (pathname.startsWith('/dashboard'))        return { title: 'Dashboard',    sub: 'Monitor your Priva Agent deployment in real-time' }
   if (pathname.startsWith('/profile'))          return { title: 'Profile',      sub: '' }
   if (pathname.startsWith('/settings'))         return { title: 'Settings',     sub: '' }
-  return { title: 'AgentScope', sub: '' }
+  return { title: 'Priva Agent', sub: '' }
 }
 
 // ── Sidebar nav link ──────────────────────────────────────────────────────────
@@ -171,6 +176,13 @@ export default function Layout() {
   const pageSub = dynSub || staticSub
   const { dark, toggle: toggleTheme } = useTheme()
 
+  const { data: settings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: systemApi.getSettings,
+  })
+
+  const siteName = settings?.site_name || 'AgentScope Manager'
+
   const toggleGroup = (key: string) =>
     setOpenGroups(prev => {
       const next = new Set(prev)
@@ -198,20 +210,15 @@ export default function Layout() {
 
         {/* Logo */}
         <div className={clsx(
-          'h-14 flex items-center shrink-0 border-b',
-          collapsed ? 'justify-center px-0' : 'px-4',
-        )} style={{ borderColor: 'var(--border)' }}>
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-brand-600 flex items-center justify-center text-white shrink-0 shadow-sm">
-              <Zap size={14} />
-            </div>
-            {!collapsed && (
-              <div className="min-w-0">
-                <p className="font-semibold text-sm leading-none" style={{ color: 'var(--text-primary)' }}>AgentScope</p>
-                <p className="text-[10px] mt-0.5 font-medium" style={{ color: 'var(--text-muted)' }}>Manager</p>
-              </div>
-            )}
-          </div>
+          'h-[60px] flex items-center gap-2 px-4 shrink-0 overflow-hidden',
+          collapsed && 'justify-center'
+        )} style={{ borderColor: 'var(--sidebar-border)' }}>
+          <Zap size={20} className="shrink-0 text-brand-500" />
+          {!collapsed && (
+            <span className="text-lg font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+              {siteName}
+            </span>
+          )}
         </div>
 
         {/* Nav */}

@@ -77,11 +77,20 @@ export default function SettingsPage() {
   }
 
   const [general, setGeneral] = useState({
-    siteName: 'AgentScope',
+    siteName: 'AgentScope Manager',
     defaultModel: 'gpt-4o-mini',
     maxAgents: 50,
     sessionTimeout: 30,
   })
+
+  useEffect(() => {
+    setGeneral({
+      siteName: dbSettings?.['site_name'] || 'AgentScope Manager',
+      defaultModel: dbSettings?.['default_model'] || 'gpt-4o-mini',
+      maxAgents: parseInt(dbSettings?.['max_agents'] || '50'),
+      sessionTimeout: parseInt(dbSettings?.['session_timeout'] || '30'),
+    })
+  }, [dbSettings])
 
   const [notifications, setNotifications] = useState({
     agentErrors: true,
@@ -92,7 +101,17 @@ export default function SettingsPage() {
 
   const saveGeneral = (e: React.FormEvent) => {
     e.preventDefault()
-    toast.success('Settings saved')
+    const data = {
+      site_name: general.siteName,
+      default_model: general.defaultModel,
+      max_agents: general.maxAgents.toString(),
+      session_timeout: general.sessionTimeout.toString(),
+    }
+    gwsMut.mutate(data, {
+      onSuccess: () => {
+        toast.success('General settings saved')
+      },
+    })
   }
 
   const clearCache = () => {
