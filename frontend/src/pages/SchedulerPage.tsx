@@ -1,10 +1,22 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Clock, Plus, Trash2, ToggleLeft, ToggleRight, AlertCircle, CheckCircle2, Link, Pencil, Play, X, Save, Loader2, XCircle } from 'lucide-react'
+import { Clock, Plus, Trash2, ToggleLeft, ToggleRight, AlertCircle, CheckCircle2, Link, Pencil, Play, X, Save, Loader2, XCircle, ExternalLink, Copy, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { schedulerApi, Scheduler, CreateSchedulerPayload } from '../api/gws'
 import { systemApi } from '../api/system'
 import toast from 'react-hot-toast'
+
+function isApiDisabledError(msg: string) {
+  return msg.includes('SERVICE_DISABLED') || msg.includes('sheets.googleapis.com')
+}
+
+function extractEnableUrl(msg: string): string {
+  const match = msg.match(/https:\/\/console\.developers\.google\.com\/apis\/api\/sheets\.googleapis\.com\/overview\?project=(\d+)/)
+  if (match) return match[0]
+  const projectMatch = msg.match(/project[=\s]+(\d+)/)
+  if (projectMatch) return `https://console.developers.google.com/apis/api/sheets.googleapis.com/overview?project=${projectMatch[1]}`
+  return 'https://console.developers.google.com/apis/api/sheets.googleapis.com'
+}
 
 function formatInterval(secs: number) {
   if (secs < 60) return `${secs}s`
@@ -21,6 +33,40 @@ const emptyForm: CreateSchedulerPayload = {
   name: '', spreadsheet_id: '', sheet_range: '',
   check_mode: 'sheets', drive_file_id: '',
   interval_seconds: 300, webhook_url: '', webhook_secret: '', is_active: true,
+}
+
+// ── API Disabled Badge ────────────────────────────────────────────────────────
+function ApiDisabledBadge({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+      <AlertCircle size={11} className="shrink-0" />
+      Google Sheets API belum diaktifkan.{' '}
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline font-medium flex items-center gap-0.5 hover:text-amber-700"
+      >
+        Aktifkan <ExternalLink size={10} />
+      </a>
+      <button
+        onClick={handleCopy}
+        title="Copy URL"
+        className="flex items-center gap-0.5 hover:text-amber-700 transition-colors"
+      >
+        {copied ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+      </button>
+    </span>
+  )
 }
 
 // ── Modal Form (create & edit) ────────────────────────────────────────────────
@@ -287,9 +333,13 @@ export default function SchedulerPage() {
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Mode: {s.check_mode}</span>
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Last triggered: {formatDate(s.last_triggered_at)}</span>
                   {s.error_msg && (
-                    <span className="flex items-center gap-1 text-xs text-red-500">
-                      <AlertCircle size={11} /> {s.error_msg}
-                    </span>
+                    isApiDisabledError(s.error_msg) ? (
+                      <ApiDisabledBadge url={extractEnableUrl(s.error_msg)} />
+                    ) : (
+                      <span className="flex items-center gap-1 text-xs text-red-500">
+                        <AlertCircle size={11} /> {s.error_msg}
+                      </span>
+                    )
                   )}
                   {!s.error_msg && s.trigger_count > 0 && (
                     <span className="flex items-center gap-1 text-xs text-emerald-500">
