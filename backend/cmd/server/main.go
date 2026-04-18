@@ -33,7 +33,7 @@ func main() {
 
 	// Init Fiber app
 	app := fiber.New(fiber.Config{
-		AppName:      "AgentScope Manager API",
+		AppName:      "Priva Agent API",
 		ReadTimeout:  0, // no timeout for SSE streaming
 		WriteTimeout: 0,
 	})
@@ -99,7 +99,7 @@ func main() {
 	sessions.Get("/:session_id", sessionH.GetSession)
 	sessions.Delete("/:session_id", sessionH.DeleteSession)
 
-	log.Printf("AgentScope Manager API starting on :%s", port)
+	log.Printf("Priva Agent API starting on :%s", port)
 	if err := app.Listen(":" + port); err != nil {
 		log.Fatalf("server error: %v", err)
 	}
