@@ -59,22 +59,32 @@ export default function SettingsPage() {
     setTestMsg('')
     try {
       const key = gws.apiKey.trim()
-      const headers: Record<string, string> = {}
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (key) headers['Authorization'] = `Bearer ${key}`
-      const res = await fetch(`${url}/health`, { headers, signal: AbortSignal.timeout(5000) })
+
+      // Gunakan endpoint schedulers yang butuh auth — lebih proper dari /health
+      const res = await fetch(`${url}/api/v1.0/schedulers`, { headers, signal: AbortSignal.timeout(5000) })
       const json = await res.json()
+
       if (res.ok) {
-        const ver = json?.data?.version ?? json?.version ?? ''
+        const count = Array.isArray(json?.data) ? json.data.length : '?'
         setTestStatus('ok')
-        setTestMsg(`Terhubung${ver ? ` — v${ver}` : ''}`)
+        setTestMsg(`Terhubung — ${count} scheduler ditemukan`)
+      } else if (res.status === 401 || json?.error?.code === 'UNAUTHORIZED') {
+        setTestStatus('error')
+        setTestMsg('Unauthorized — API Key salah atau tidak valid')
       } else {
         setTestStatus('error')
-        setTestMsg(`HTTP ${res.status}`)
+        setTestMsg(`HTTP ${res.status}: ${json?.error?.message ?? 'Unknown error'}`)
       }
     } catch (e: unknown) {
       setTestStatus('error')
       const msg = e instanceof Error ? e.message : 'Gagal terhubung'
-      setTestMsg(msg.includes('abort') ? 'Timeout (5s)' : msg)
+      setTestMsg(
+        msg.includes('abort') || msg.includes('timed out')
+          ? 'Timeout — pastikan URL mengarah ke port backend API (bukan frontend, port default: 8083)'
+          : `Tidak dapat terhubung: ${msg}`
+      )
     }
   }
 
@@ -187,9 +197,9 @@ export default function SettingsPage() {
                   className="input font-mono"
                   value={gws.baseUrl}
                   onChange={e => setGws(g => ({ ...g, baseUrl: e.target.value }))}
-                  placeholder="http://192.168.1.x:8090"
+                  placeholder="http://192.168.25.134:8083"
                 />
-                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>URL langsung ke priva-gws backend (tanpa trailing slash)</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>URL ke priva-gws <strong>backend</strong> API — bukan port frontend. Port default: <code className="font-mono">8083</code></p>
               </div>
               <div>
                 <label className="label">API Key</label>
