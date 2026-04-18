@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Clock, Plus, Trash2, ToggleLeft, ToggleRight, AlertCircle, CheckCircle2, Link, Pencil, Play, X, Save, Loader2, XCircle, ExternalLink, Copy, Check } from 'lucide-react'
+import { Clock, Plus, Trash2, ToggleLeft, ToggleRight, AlertCircle, CheckCircle2, Link, Pencil, Play, X, Save, Loader2, XCircle, ExternalLink, Copy, Check, CalendarDays, RefreshCw, Zap, Sheet } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { schedulerApi, Scheduler, CreateSchedulerPayload } from '../api/gws'
 import { systemApi } from '../api/system'
@@ -316,90 +316,114 @@ export default function SchedulerPage() {
       ) : (
         <div className="space-y-3">
           {schedulers.map(s => (
-            <div key={s.id} className="card-hover flex items-center gap-4">
-              {/* Icon */}
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-                <Clock size={15} className="text-brand-500" />
+            <div key={s.id} className="card-hover transition-all">
+              {/* Top row: icon + name + badges + actions */}
+              <div className="flex items-start gap-3">
+                {/* Icon */}
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${s.is_active ? 'bg-brand-50 dark:bg-brand-950/30' : ''}`}
+                  style={s.is_active ? { border: '1px solid var(--brand-200, #c7d2fe)' } : { background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                  <Clock size={16} className={s.is_active ? 'text-brand-500' : 'text-slate-400'} />
+                </div>
+
+                {/* Name + badges */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{s.name}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${s.is_active ? 'badge-green' : 'badge-gray'}`}>
+                      {s.is_active ? '● Active' : '○ Inactive'}
+                    </span>
+                    {s.running && <span className="badge-blue text-[10px] px-2 py-0.5 rounded-full font-semibold animate-pulse">⚡ Running</span>}
+                  </div>
+
+                  {/* Meta row */}
+                  <div className="flex items-center gap-3 mt-1 flex-wrap">
+                    <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                      <RefreshCw size={10} /> Every {formatInterval(s.interval_seconds)}
+                    </span>
+                    <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                      <Sheet size={10} /> {s.check_mode === 'sheets' ? 'Google Sheets' : 'Google Drive'}
+                    </span>
+                    {s.trigger_count > 0 && (
+                      <span className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                        <Zap size={10} /> {s.trigger_count} triggers
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <button
+                    onClick={() => handleTest(s)}
+                    disabled={testingId === s.id}
+                    className="p-2 rounded-lg transition hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-slate-400 hover:text-emerald-600"
+                    title="Run now"
+                  >
+                    <Play size={14} className={testingId === s.id ? 'animate-pulse text-emerald-500' : ''} />
+                  </button>
+                  <button
+                    onClick={() => setModal({ ...s })}
+                    className="p-2 rounded-lg transition hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                    title="Edit"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    onClick={() => toggleMut.mutate(s.id)}
+                    disabled={toggleMut.isPending}
+                    className="p-2 rounded-lg transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                    title={s.is_active ? 'Deactivate' : 'Activate'}
+                  >
+                    {s.is_active
+                      ? <ToggleRight size={18} className="text-brand-500" />
+                      : <ToggleLeft size={18} className="text-slate-400" />}
+                  </button>
+                  <button
+                    onClick={() => { if (confirm(`Delete "${s.name}"?`)) deleteMut.mutate(s.id) }}
+                    disabled={deleteMut.isPending}
+                    className="p-2 rounded-lg transition hover:bg-red-50 dark:hover:bg-red-950/30 text-slate-400 hover:text-red-500"
+                    title="Delete"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
 
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{s.name}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium ${s.is_active ? 'badge-green' : 'badge-gray'}`}>
-                    {s.is_active ? 'Active' : 'Inactive'}
+              {/* Divider */}
+              <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+                <div className="flex items-center gap-4 flex-wrap">
+                  {/* Timestamps */}
+                  <span className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                    <CalendarDays size={10} />
+                    Created {formatDate(s.created_at)}
                   </span>
-                  {s.running && <span className="badge-blue text-[10px]">Running</span>}
-                </div>
-                <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Every {formatInterval(s.interval_seconds)}</span>
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Mode: {s.check_mode}</span>
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Last triggered: {formatDate(s.last_triggered_at)}</span>
+                  <span className="flex items-center gap-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                    <Pencil size={9} />
+                    Updated {formatDate(s.updated_at)}
+                  </span>
+                  {s.last_triggered_at && (
+                    <span className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 size={10} />
+                      Last triggered {formatDate(s.last_triggered_at)}
+                    </span>
+                  )}
+
+                  {/* Error */}
                   {s.error_msg && (
                     isApiDisabledError(s.error_msg) ? (
                       <ApiDisabledBadge url={extractEnableUrl(s.error_msg)} />
                     ) : isFailedPreconditionError(s.error_msg) ? (
-                      <span className="flex items-center gap-1.5 text-xs text-orange-600 dark:text-orange-400">
-                        <AlertCircle size={11} className="shrink-0" />
-                        File Excel (.xlsx) tidak didukung. Buka file → <em>File &gt; Simpan sebagai Google Sheets</em>, lalu update ID-nya.
+                      <span className="flex items-center gap-1.5 text-[11px] text-orange-600 dark:text-orange-400">
+                        <AlertCircle size={10} className="shrink-0" />
+                        File Excel tidak didukung — konversi ke Google Sheets lalu update ID-nya.
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1 text-xs text-red-500">
-                        <AlertCircle size={11} /> {s.error_msg}
+                      <span className="flex items-center gap-1.5 text-[11px] text-red-500">
+                        <AlertCircle size={10} className="shrink-0" /> {s.error_msg}
                       </span>
                     )
                   )}
-                  {!s.error_msg && s.trigger_count > 0 && (
-                    <span className="flex items-center gap-1 text-xs text-emerald-500">
-                      <CheckCircle2 size={11} /> {s.trigger_count} triggers
-                    </span>
-                  )}
                 </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-1 shrink-0">
-                {/* Test / Run */}
-                <button
-                  onClick={() => handleTest(s)}
-                  disabled={testingId === s.id}
-                  className="p-2 rounded-lg transition hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-slate-400 hover:text-emerald-600"
-                  title="Test / Run now"
-                >
-                  <Play size={14} className={testingId === s.id ? 'animate-pulse text-emerald-500' : ''} />
-                </button>
-
-                {/* Edit */}
-                <button
-                  onClick={() => setModal({ ...s })}
-                  className="p-2 rounded-lg transition hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                  title="Edit"
-                >
-                  <Pencil size={14} />
-                </button>
-
-                {/* Toggle */}
-                <button
-                  onClick={() => toggleMut.mutate(s.id)}
-                  disabled={toggleMut.isPending}
-                  className="p-2 rounded-lg transition hover:bg-slate-100 dark:hover:bg-slate-800"
-                  title={s.is_active ? 'Deactivate' : 'Activate'}
-                >
-                  {s.is_active
-                    ? <ToggleRight size={18} className="text-brand-500" />
-                    : <ToggleLeft size={18} className="text-slate-400" />}
-                </button>
-
-                {/* Delete */}
-                <button
-                  onClick={() => { if (confirm(`Delete "${s.name}"?`)) deleteMut.mutate(s.id) }}
-                  disabled={deleteMut.isPending}
-                  className="p-2 rounded-lg transition hover:bg-red-50 dark:hover:bg-red-950/30 text-slate-400 hover:text-red-500"
-                  title="Delete"
-                >
-                  <Trash2 size={15} />
-                </button>
               </div>
             </div>
           ))}
