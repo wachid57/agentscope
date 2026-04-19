@@ -224,9 +224,26 @@ async def run_agent_stream(
         msg_id = msg_dict.get("id", "")
 
         if not isinstance(content, str):
-            # Non-text messages (tool calls, observations) — always forward
-            yield f"data: {json.dumps(msg_dict, ensure_ascii=False)}\n\n"
-            continue
+            if isinstance(content, list):
+                # Extract text from content blocks (e.g. DashScope sends
+                # cumulative [{"type":"text","text":"..."}] arrays).
+                # Rewrite as a plain string so dedup logic applies.
+                extracted = "".join(
+                    block.get("text", "")
+                    for block in content
+                    if isinstance(block, dict) and block.get("type") == "text"
+                )
+                if extracted:
+                    content = extracted
+                    msg_dict = dict(msg_dict)
+                    msg_dict["content"] = content
+                else:
+                    # No text (e.g. pure tool-call block) — forward as-is
+                    yield f"data: {json.dumps(msg_dict, ensure_ascii=False)}\n\n"
+                    continue
+            else:
+                yield f"data: {json.dumps(msg_dict, ensure_ascii=False)}\n\n"
+                continue
 
         prev = accumulated_per_id.get(msg_id, "")
 
