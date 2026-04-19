@@ -249,8 +249,24 @@ func (h *SystemHandler) ListBuiltinTools(c *fiber.Ctx) error {
 		{
 			"name":        "send_telegram_message",
 			"type":        "builtin",
-			"description": "Kirim pesan ke Telegram melalui priva-telegram",
+			"description": "Kirim pesan ke Telegram melalui priva-telegram (autentikasi API key)",
 			"tags":        []string{"invoice", "telegram", "notification"},
+			"params": []fiber.Map{
+				{"name": "telegram_api_key", "label": "API Key (X-API-KEY)", "required": true, "placeholder": "your-api-key"},
+				{"name": "chat_id", "label": "Default Chat ID", "required": false, "placeholder": "123456789"},
+				{"name": "telegram_api_url", "label": "Telegram API URL", "required": false, "placeholder": "http://172.22.0.1:8080"},
+			},
+		},
+		{
+			"name":        "send_telegram_file",
+			"type":        "builtin",
+			"description": "Kirim file/dokumen (PDF, dll) ke Telegram melalui priva-telegram",
+			"tags":        []string{"invoice", "telegram", "file"},
+			"params": []fiber.Map{
+				{"name": "telegram_api_key", "label": "API Key (X-API-KEY)", "required": true, "placeholder": "your-api-key"},
+				{"name": "chat_id", "label": "Default Chat ID", "required": false, "placeholder": "123456789"},
+				{"name": "telegram_api_url", "label": "Telegram API URL", "required": false, "placeholder": "http://172.22.0.1:8080"},
+			},
 		},
 	}
 	return c.JSON(fiber.Map{"data": tools})

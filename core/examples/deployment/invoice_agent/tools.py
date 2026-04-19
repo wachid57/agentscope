@@ -437,42 +437,32 @@ def create_invoice(
 def send_telegram_message(
     chat_id: str,
     text: str,
-    bot_id: str = "",
     parse_mode: str = "Markdown",
     telegram_api_url: str = "",
-    telegram_jwt_token: str = "",
+    telegram_api_key: str = "",
 ) -> str:
-    """Send a message to a Telegram chat through the priva-telegram service.
+    """Send a text message to a Telegram chat through the priva-telegram service.
 
-    The priva-telegram service handles bot token lookup, message recording,
-    audit logging, and actual delivery via the Telegram Bot API.
+    Uses API key authentication (X-API-KEY header). The API key is bound to a
+    specific bot in priva-telegram, so no bot_id is needed in the request.
 
     Args:
-        chat_id:            Telegram chat ID (numeric string).
-        text:               Message text. Supports Markdown or HTML.
-        bot_id:             UUID of the registered bot in priva-telegram.
-                            Falls back to env TELEGRAM_BOT_ID.
-        parse_mode:         "Markdown" | "HTML". Default "Markdown".
-        telegram_api_url:   Base URL of priva-telegram, e.g.
-                            "http://localhost:8080". Falls back to env
-                            TELEGRAM_API_URL.
-        telegram_jwt_token: JWT token for priva-telegram /api/v1/send.
-                            Falls back to env TELEGRAM_JWT_TOKEN.
+        chat_id:          Telegram chat ID (numeric string, e.g. "123456789").
+        text:             Message text. Supports Markdown or HTML formatting.
+        parse_mode:       "Markdown" or "HTML". Default "Markdown".
+        telegram_api_url: Base URL of priva-telegram. Falls back to env TELEGRAM_API_URL.
+        telegram_api_key: API key (X-API-KEY). Falls back to env TELEGRAM_API_KEY.
 
     Returns:
-        JSON string with {"success": true} on success or {"error": "..."}.
+        JSON string: {"success": true, "message": "sent"} or {"error": "..."}.
     """
-    base_url        = telegram_api_url   or os.environ.get("TELEGRAM_API_URL",   "http://localhost:8080")
-    jwt_token       = telegram_jwt_token or os.environ.get("TELEGRAM_JWT_TOKEN", "")
-    resolved_bot_id = bot_id             or os.environ.get("TELEGRAM_BOT_ID",    "")
+    base_url = telegram_api_url or os.environ.get("TELEGRAM_API_URL", "http://localhost:8080")
+    api_key  = telegram_api_key or os.environ.get("TELEGRAM_API_KEY", "")
 
-    if not jwt_token:
-        return json.dumps({"error": "No TELEGRAM_JWT_TOKEN provided"})
-    if not resolved_bot_id:
-        return json.dumps({"error": "No TELEGRAM_BOT_ID provided"})
+    if not api_key:
+        return json.dumps({"error": "No TELEGRAM_API_KEY provided"})
 
     payload = {
-        "bot_id":     resolved_bot_id,
         "chat_id":    chat_id,
         "text":       text,
         "parse_mode": parse_mode,
@@ -480,13 +470,65 @@ def send_telegram_message(
 
     try:
         resp = requests.post(
-            f"{base_url}/api/v1/send",
+            f"{base_url}/api/v1/agent/send",
             headers={
-                "Authorization": f"Bearer {jwt_token}",
-                "Content-Type":  "application/json",
+                "X-API-KEY":    api_key,
+                "Content-Type": "application/json",
             },
             json=payload,
             timeout=15,
+        )
+        return json.dumps(resp.json(), ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+def send_telegram_file(
+    chat_id: str,
+    file_url: str,
+    caption: str = "",
+    parse_mode: str = "Markdown",
+    telegram_api_url: str = "",
+    telegram_api_key: str = "",
+) -> str:
+    """Send a file (document/PDF) to a Telegram chat through the priva-telegram service.
+
+    Uses API key authentication (X-API-KEY header). The file must be accessible
+    via a public URL (e.g. a PDF link returned by priva-invoice).
+
+    Args:
+        chat_id:          Telegram chat ID (numeric string, e.g. "123456789").
+        file_url:         Publicly accessible URL of the file to send.
+        caption:          Optional caption displayed below the file.
+        parse_mode:       "Markdown" or "HTML". Default "Markdown".
+        telegram_api_url: Base URL of priva-telegram. Falls back to env TELEGRAM_API_URL.
+        telegram_api_key: API key (X-API-KEY). Falls back to env TELEGRAM_API_KEY.
+
+    Returns:
+        JSON string: {"success": true, "message": "file sent"} or {"error": "..."}.
+    """
+    base_url = telegram_api_url or os.environ.get("TELEGRAM_API_URL", "http://localhost:8080")
+    api_key  = telegram_api_key or os.environ.get("TELEGRAM_API_KEY", "")
+
+    if not api_key:
+        return json.dumps({"error": "No TELEGRAM_API_KEY provided"})
+
+    payload = {
+        "chat_id":    chat_id,
+        "file_url":   file_url,
+        "caption":    caption,
+        "parse_mode": parse_mode,
+    }
+
+    try:
+        resp = requests.post(
+            f"{base_url}/api/v1/agent/send-file",
+            headers={
+                "X-API-KEY":    api_key,
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=30,
         )
         return json.dumps(resp.json(), ensure_ascii=False)
     except Exception as e:

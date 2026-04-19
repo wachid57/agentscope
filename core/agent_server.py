@@ -44,7 +44,7 @@ from agentscope.tool import (
 try:
     import sys, os as _os
     sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), "examples/deployment/invoice_agent"))
-    from tools import check_sheet_changed, read_gws_sheet, read_excel_invoice, create_invoice, send_telegram_message  # type: ignore
+    from tools import check_sheet_changed, read_gws_sheet, read_excel_invoice, create_invoice, send_telegram_message, send_telegram_file  # type: ignore
     _INVOICE_TOOLS_AVAILABLE = True
 except Exception as _e:
     _INVOICE_TOOLS_AVAILABLE = False
@@ -156,6 +156,7 @@ if _INVOICE_TOOLS_AVAILABLE:
     BUILTIN_TOOLS["read_excel_invoice"]    = read_excel_invoice
     BUILTIN_TOOLS["create_invoice"]        = create_invoice
     BUILTIN_TOOLS["send_telegram_message"] = send_telegram_message
+    BUILTIN_TOOLS["send_telegram_file"]    = send_telegram_file
 
 
 def build_toolkit(tools_cfg: list) -> Toolkit:

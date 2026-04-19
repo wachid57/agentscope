@@ -22,6 +22,15 @@ services:
       - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      # priva-telegram integration (172.22.0.1 = docker host gateway from this network)
+      - TELEGRAM_API_URL=${TELEGRAM_API_URL:-http://172.22.0.1:8080}
+      - TELEGRAM_BOT_ID=${TELEGRAM_BOT_ID:-}
+      - TELEGRAM_API_KEY=${TELEGRAM_API_KEY:-}
+      # GWS integration
+      - GWS_API_URL=${GWS_API_URL:-}
+      - GWS_API_KEY=${GWS_API_KEY:-}
+      - GWS_USER_ID=${GWS_USER_ID:-}
+      - GWS_TENANT_ID=${GWS_TENANT_ID:-}
       # Tracing / observability (optional)
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     volumes:
