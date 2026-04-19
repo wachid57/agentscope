@@ -29,4 +29,6 @@ export const agentsApi = {
 
   createSession: (id: string, userID?: string) =>
     client.post<Session>(`/agents/${id}/sessions`, { user_id: userID }).then(r => r.data),
+
+  deleteSession: (sessionId: string) => client.delete(`/sessions/${sessionId}`),
 }

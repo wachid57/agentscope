@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Send, Bot, User, Loader2, AlertTriangle, SquarePen, MessageSquare, Trash2, Clock } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft, Send, Bot, User, Loader2, AlertTriangle, SquarePen, MessageSquare, Trash2, Clock, MoreHorizontal } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { formatDistanceToNow, format } from 'date-fns'
 import { agentsApi } from '../api/agents'
@@ -37,6 +37,20 @@ export default function ChatPage() {
   })
   const sessions: Session[] = sessionsData?.data ?? []
 
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+
+  const deleteSessionMutation = useMutation({
+    mutationFn: (sid: string) => agentsApi.deleteSession(sid),
+    onSuccess: (_, deletedId) => {
+      if (sessionId === deletedId) {
+        setSessionId('')
+        setMessages([])
+      }
+      refetchSessions()
+      setMenuOpenId(null)
+    },
+  })
+
   const isOnline = agent?.status === 'running'
   useSetNavSubtitle(agent ? (isOnline ? 'Online' : 'Offline') : '')
 
@@ -68,6 +82,13 @@ export default function ChatPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingContent])
+
+  useEffect(() => {
+    if (!menuOpenId) return
+    const close = () => setMenuOpenId(null)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [menuOpenId])
 
   const startNewChat = useCallback(() => {
     setMessages([])
@@ -207,36 +228,65 @@ export default function ChatPage() {
               const isActive = sess.id === sessionId
               const lastMsg = sess.messages?.[sess.messages.length - 1]
               const preview = lastMsg?.content?.slice(0, 60) ?? 'No messages'
+              const isMenuOpen = menuOpenId === sess.id
               return (
-                <button
-                  key={sess.id}
-                  onClick={() => loadSession(sess)}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg transition-all group ${isActive ? 'ring-1' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'}`}
-                  style={isActive ? {
-                    background: 'var(--brand-50, #eff6ff)',
-                    border: '1px solid var(--brand-200, #bfdbfe)',
-                  } : {}}
-                >
-                  <div className="flex items-start gap-2">
-                    <MessageSquare size={12} className={`mt-0.5 shrink-0 ${isActive ? 'text-brand-500' : ''}`}
-                      style={!isActive ? { color: 'var(--text-muted)' } : {}} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate" style={{ color: isActive ? 'var(--brand-700, #1d4ed8)' : 'var(--text-primary)' }}>
-                        {sess.messages?.[0]?.content?.slice(0, 35) ?? 'Session ' + sess.id.slice(0, 6)}
-                      </p>
-                      <p className="text-[10px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{preview}…</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <Clock size={9} style={{ color: 'var(--text-muted)' }} />
-                        <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                          {formatDistanceToNow(new Date(sess.updated_at))} ago
-                        </span>
-                        <span className="text-[10px] ml-auto" style={{ color: 'var(--text-muted)' }}>
-                          {sess.messages?.length ?? 0} msg
-                        </span>
+                <div key={sess.id} className="relative group">
+                  <button
+                    onClick={() => loadSession(sess)}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg transition-all ${isActive ? 'ring-1' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'}`}
+                    style={isActive ? {
+                      background: 'var(--brand-50, #eff6ff)',
+                      border: '1px solid var(--brand-200, #bfdbfe)',
+                    } : {}}
+                  >
+                    <div className="flex items-start gap-2">
+                      <MessageSquare size={12} className={`mt-0.5 shrink-0 ${isActive ? 'text-brand-500' : ''}`}
+                        style={!isActive ? { color: 'var(--text-muted)' } : {}} />
+                      <div className="flex-1 min-w-0 pr-5">
+                        <p className="text-xs font-medium truncate" style={{ color: isActive ? 'var(--brand-700, #1d4ed8)' : 'var(--text-primary)' }}>
+                          {sess.messages?.[0]?.content?.slice(0, 35) ?? 'Session ' + sess.id.slice(0, 6)}
+                        </p>
+                        <p className="text-[10px] truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{preview}…</p>
+                        <div className="flex items-center gap-1 mt-1">
+                          <Clock size={9} style={{ color: 'var(--text-muted)' }} />
+                          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                            {formatDistanceToNow(new Date(sess.updated_at))} ago
+                          </span>
+                          <span className="text-[10px] ml-auto" style={{ color: 'var(--text-muted)' }}>
+                            {sess.messages?.length ?? 0} msg
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+
+                  {/* 3-dot menu button */}
+                  <button
+                    onClick={e => { e.stopPropagation(); setMenuOpenId(isMenuOpen ? null : sess.id) }}
+                    className="absolute right-2 top-2.5 w-5 h-5 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:!opacity-100 transition-opacity"
+                    style={{ color: 'var(--text-muted)', background: 'var(--bg-elevated)' }}
+                    title="Options"
+                  >
+                    <MoreHorizontal size={12} />
+                  </button>
+
+                  {/* Dropdown */}
+                  {isMenuOpen && (
+                    <div
+                      className="absolute right-2 top-8 z-20 rounded-lg shadow-lg border py-1 min-w-[110px]"
+                      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
+                    >
+                      <button
+                        onClick={e => { e.stopPropagation(); deleteSessionMutation.mutate(sess.id) }}
+                        disabled={deleteSessionMutation.isPending}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 transition-colors"
+                      >
+                        <Trash2 size={11} />
+                        Hapus
+                      </button>
+                    </div>
+                  )}
+                </div>
               )
             })
           )}

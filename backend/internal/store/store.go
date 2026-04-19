@@ -166,6 +166,9 @@ func (s *Store) ListSessions(agentID string) []*models.Session {
 			out = append(out, sess)
 		}
 	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].CreatedAt.Before(out[j].CreatedAt)
+	})
 	return out
 }
 
