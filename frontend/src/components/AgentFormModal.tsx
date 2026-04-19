@@ -34,6 +34,8 @@ export default function AgentFormModal({ agent, onClose }: Props) {
   const [modelSearch, setModelSearch] = useState('')
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false)
   const [expandedToolParams, setExpandedToolParams] = useState<Set<string>>(new Set())
+  const [editingToolParams, setEditingToolParams] = useState<Set<string>>(new Set())
+  const [toolParamDrafts, setToolParamDrafts] = useState<Record<string, Record<string, string>>>({})
   const modelDropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -63,8 +65,17 @@ export default function AgentFormModal({ agent, onClose }: Props) {
         memory: agent.memory,
         tags: agent.tags ?? [],
       })
+      // Auto-expand any tool that already has saved config values
+      const toExpand = new Set<string>()
+      for (const tool of agent.tools ?? []) {
+        if (tool.enabled && tool.config && Object.keys(tool.config as object).length > 0) {
+          toExpand.add(tool.name)
+        }
+      }
+      setExpandedToolParams(toExpand)
     }
-  }, [agent])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agent?.id])
 
   const selectedProvider = providers.find(p => p.id === form.model.provider)
 
@@ -121,14 +132,30 @@ export default function AgentFormModal({ agent, onClose }: Props) {
   }
 
   const setToolParam = (toolName: string, paramName: string, value: string) => {
+    setToolParamDrafts(d => ({
+      ...d,
+      [toolName]: { ...(d[toolName] ?? {}), [paramName]: value },
+    }))
+  }
+
+  const startEditTool = (toolName: string, currentCfg: Record<string, string>) => {
+    setToolParamDrafts(d => ({ ...d, [toolName]: { ...currentCfg } }))
+    setEditingToolParams(prev => new Set(prev).add(toolName))
+  }
+
+  const saveToolParams = (toolName: string) => {
+    const draft = toolParamDrafts[toolName] ?? {}
     setForm(f => ({
       ...f,
       tools: f.tools.map(t =>
-        t.name === toolName
-          ? { ...t, config: { ...(t.config as Record<string, string> ?? {}), [paramName]: value } }
-          : t
+        t.name === toolName ? { ...t, config: draft } : t
       ),
     }))
+    setEditingToolParams(prev => { const n = new Set(prev); n.delete(toolName); return n })
+  }
+
+  const cancelEditTool = (toolName: string) => {
+    setEditingToolParams(prev => { const n = new Set(prev); n.delete(toolName); return n })
   }
 
   const addTag = () => {
@@ -142,8 +169,8 @@ export default function AgentFormModal({ agent, onClose }: Props) {
   const isPending = createMut.isPending || updateMut.isPending
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-dropdown border animate-in"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-dropdown border"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 z-10"
@@ -404,9 +431,14 @@ export default function AgentFormModal({ agent, onClose }: Props) {
                         checked={enabled}
                         onChange={() => {
                           toggleTool(tool.name, tool.description, tool.tags)
-                          // Auto-expand params when enabling a tool that has params
                           if (!enabled && hasParams) {
+                            // New tool: expand and start in edit mode with blank draft
                             setExpandedToolParams(prev => new Set(prev).add(tool.name))
+                            setEditingToolParams(prev => new Set(prev).add(tool.name))
+                            setToolParamDrafts(d => ({ ...d, [tool.name]: {} }))
+                          } else {
+                            // Disabling: clean up edit state
+                            setEditingToolParams(prev => { const n = new Set(prev); n.delete(tool.name); return n })
                           }
                         }}
                       />
@@ -429,23 +461,74 @@ export default function AgentFormModal({ agent, onClose }: Props) {
                     </div>
 
                     {/* Params panel — shown when expanded */}
-                    {enabled && hasParams && paramsExpanded && (
-                      <div className="px-3 pb-3 space-y-2 border-t pt-2" style={{ borderColor: 'var(--border)' }}>
-                        {tool.params!.map(p => (
-                          <div key={p.name}>
-                            <label className="text-[10px] font-medium mb-0.5 block" style={{ color: 'var(--text-muted)' }}>
-                              {p.label}{p.required && <span className="text-red-500 ml-0.5">*</span>}
-                            </label>
-                            <input
-                              className="input text-xs py-1"
-                              placeholder={p.placeholder ?? p.name}
-                              value={cfgMap[p.name] ?? ''}
-                              onChange={e => setToolParam(tool.name, p.name, e.target.value)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {enabled && hasParams && paramsExpanded && (() => {
+                      const isEditing = editingToolParams.has(tool.name)
+                      const draftCfg = toolParamDrafts[tool.name] ?? cfgMap
+                      return (
+                        <div className="px-3 pb-3 space-y-2 border-t pt-2" style={{ borderColor: 'var(--border)' }}>
+                          {isEditing ? (
+                            <>
+                              {tool.params!.map(p => (
+                                <div key={p.name}>
+                                  <label className="text-[10px] font-medium mb-0.5 block" style={{ color: 'var(--text-muted)' }}>
+                                    {p.label}{p.required && <span className="text-red-500 ml-0.5">*</span>}
+                                  </label>
+                                  <input
+                                    className="input text-xs py-1"
+                                    placeholder={p.placeholder ?? p.name}
+                                    value={draftCfg[p.name] ?? ''}
+                                    onChange={e => setToolParam(tool.name, p.name, e.target.value)}
+                                  />
+                                </div>
+                              ))}
+                              <div className="flex gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  className="btn-primary text-[11px] px-3 py-1"
+                                  onClick={() => saveToolParams(tool.name)}
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-outline text-[11px] px-3 py-1"
+                                  onClick={() => cancelEditTool(tool.name)}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {tool.params!.map(p => (
+                                <div key={p.name}>
+                                  <label className="text-[10px] font-medium mb-0.5 block" style={{ color: 'var(--text-muted)' }}>
+                                    {p.label}{p.required && <span className="text-red-500 ml-0.5">*</span>}
+                                  </label>
+                                  <p className="text-xs px-2 py-1 rounded-lg truncate"
+                                    style={{
+                                      background: 'var(--bg-base)',
+                                      color: cfgMap[p.name] ? 'var(--text-primary)' : 'var(--text-muted)',
+                                      border: '1px solid var(--border)',
+                                    }}>
+                                    {cfgMap[p.name] || <em className="opacity-50">{p.placeholder ?? '—'}</em>}
+                                  </p>
+                                </div>
+                              ))}
+                              <div className="pt-1">
+                                <button
+                                  type="button"
+                                  className="btn-outline text-[11px] px-3 py-1"
+                                  onClick={() => startEditTool(tool.name, cfgMap)}
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })()}
                   </div>
                 )
               })}
