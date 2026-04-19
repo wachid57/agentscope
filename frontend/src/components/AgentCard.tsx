@@ -9,6 +9,17 @@ import AgentFormModal from './AgentFormModal'
 import { agentsApi } from '../api/agents'
 import type { Agent } from '../types'
 
+// Format agent type from priva-agent-react to ReAct Agent
+function formatAgentType(type: string): string {
+  const typeMap: Record<string, string> = {
+    'priva-agent-react': 'ReAct Agent',
+    'priva-agent-user': 'User Agent',
+    'priva-agent-realtime': 'Realtime Agent',
+    'priva-agent-a2a': 'A2A Agent',
+  }
+  return typeMap[type] || type
+}
+
 export default function AgentCard({ agent }: { agent: Agent }) {
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -66,7 +77,7 @@ export default function AgentCard({ agent }: { agent: Agent }) {
               {agent.name}
             </h3>
             <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {agent.type}
+              {formatAgentType(agent.type)}
             </p>
           </div>
         </div>
