@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"time"
 
@@ -50,6 +51,9 @@ func (s *Store) ListAgents() []*models.Agent {
 	for _, a := range s.agents {
 		out = append(out, a)
 	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].CreatedAt.Before(out[j].CreatedAt)
+	})
 	return out
 }
 
