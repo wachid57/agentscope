@@ -207,12 +207,32 @@ async def run_agent_stream(
 
     user_msg = Msg(user_id, user_input, "user")
 
+    accumulated = ""
     async for msg, _ in stream_printing_messages(
         agents=[agent],
         coroutine_task=agent(user_msg),
     ):
-        data = json.dumps(msg.to_dict(), ensure_ascii=False)
-        yield f"data: {data}\n\n"
+        msg_dict = msg.to_dict()
+        content = msg_dict.get("content", "")
+
+        if not isinstance(content, str):
+            yield f"data: {json.dumps(msg_dict, ensure_ascii=False)}\n\n"
+            continue
+
+        # Normalize to delta: some providers (e.g. DashScope) send cumulative
+        # content in each chunk instead of just the new token.
+        if content.startswith(accumulated):
+            delta = content[len(accumulated):]
+            accumulated = content
+        else:
+            # True delta mode (e.g. OpenAI) — new token doesn't start with what we have
+            delta = content
+            accumulated += content
+
+        if delta:
+            out = dict(msg_dict)
+            out["content"] = delta
+            yield f"data: {json.dumps(out, ensure_ascii=False)}\n\n"
 
     # Persist session state
     await session.save_session_state(

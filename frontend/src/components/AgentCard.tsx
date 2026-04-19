@@ -9,15 +9,28 @@ import AgentFormModal from './AgentFormModal'
 import { agentsApi } from '../api/agents'
 import type { Agent } from '../types'
 
-// Format agent type from priva-agent-react to ReAct Agent
-function formatAgentType(type: string): string {
-  const typeMap: Record<string, string> = {
-    'priva-agent-react': 'ReAct Agent',
-    'priva-agent-user': 'User Agent',
-    'priva-agent-realtime': 'Realtime Agent',
-    'priva-agent-a2a': 'A2A Agent',
-  }
-  return typeMap[type] || type
+const AGENT_TYPE_META: Record<string, { label: string; bg: string; color: string }> = {
+  'priva-agent-react': { label: 'ReAct',     bg: '#f5f3ff', color: '#7c3aed' },
+  'priva-agent-user':  { label: 'User',      bg: '#eff6ff', color: '#2563eb' },
+  'priva-agent-realtime': { label: 'Realtime', bg: '#fff7ed', color: '#ea580c' },
+  'priva-agent-a2a':   { label: 'A2A',       bg: '#f0fdf4', color: '#16a34a' },
+  // legacy names
+  'ReActAgent':        { label: 'ReAct',     bg: '#f5f3ff', color: '#7c3aed' },
+  'UserAgent':         { label: 'User',      bg: '#eff6ff', color: '#2563eb' },
+  'RealtimeAgent':     { label: 'Realtime',  bg: '#fff7ed', color: '#ea580c' },
+  'A2AAgent':          { label: 'A2A',       bg: '#f0fdf4', color: '#16a34a' },
+}
+
+function AgentTypeBadge({ type }: { type: string }) {
+  const meta = AGENT_TYPE_META[type] ?? { label: type, bg: 'var(--bg-elevated)', color: 'var(--text-muted)' }
+  return (
+    <span
+      className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold tracking-wide"
+      style={{ background: meta.bg, color: meta.color }}
+    >
+      {meta.label}
+    </span>
+  )
 }
 
 export default function AgentCard({ agent }: { agent: Agent }) {
@@ -76,9 +89,9 @@ export default function AgentCard({ agent }: { agent: Agent }) {
             >
               {agent.name}
             </h3>
-            <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {formatAgentType(agent.type)}
-            </p>
+            <div className="mt-0.5">
+              <AgentTypeBadge type={agent.type} />
+            </div>
           </div>
         </div>
 
