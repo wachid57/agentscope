@@ -112,6 +112,12 @@ services:
       - "3030:80"
     networks:
       - priva-agent-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       - backend
 
@@ -145,6 +151,12 @@ services:
       - COLLECTOR_OTLP_ENABLED=true
     networks:
       - priva-agent-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:14269/"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
 volumes:
   priva-agent-data:
