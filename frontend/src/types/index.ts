@@ -112,11 +112,19 @@ export interface ModelProvider_Info {
   base_url?: string
 }
 
+export interface ToolParam {
+  name: string
+  label: string
+  required: boolean
+  placeholder?: string
+}
+
 export interface BuiltinTool {
   name: string
   type: string
   description: string
   tags: string[]
+  params?: ToolParam[]
 }
 
 export interface Overview {

@@ -220,12 +220,19 @@ func (h *SystemHandler) ListBuiltinTools(c *fiber.Ctx) error {
 			"type":        "builtin",
 			"description": "Cek apakah Google Sheets berubah sejak pengecekan terakhir (via priva-gws, hemat token)",
 			"tags":        []string{"invoice", "google-sheets", "scheduler"},
+			"params": []fiber.Map{
+				{"name": "spreadsheet_id", "label": "Google Sheet ID", "required": true, "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"},
+			},
 		},
 		{
 			"name":        "read_gws_sheet",
 			"type":        "builtin",
 			"description": "Baca data invoice dari Google Sheets melalui priva-gws MCP",
 			"tags":        []string{"invoice", "google-sheets", "gws"},
+			"params": []fiber.Map{
+				{"name": "spreadsheet_id", "label": "Google Sheet ID", "required": true, "placeholder": "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"},
+				{"name": "range_", "label": "Range (opsional)", "required": false, "placeholder": "Sheet1!A1:Z1000"},
+			},
 		},
 		{
 			"name":        "read_excel_invoice",

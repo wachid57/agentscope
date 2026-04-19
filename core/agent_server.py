@@ -4,6 +4,7 @@
 AgentScope Dynamic Agent Server
 Receives agent config from Go backend and runs agents on demand.
 """
+import functools
 import json
 import logging
 import os
@@ -163,9 +164,17 @@ def build_toolkit(tools_cfg: list) -> Toolkit:
         if not tool.get("enabled", True):
             continue
         name = tool.get("name", "")
+        config = {k: v for k, v in (tool.get("config") or {}).items() if v}
         if name in BUILTIN_TOOLS:
-            toolkit.register_tool_function(BUILTIN_TOOLS[name])
-            logger.info(f"Registered tool: {name}")
+            fn = BUILTIN_TOOLS[name]
+            if config:
+                # Pre-bind tool-specific params (e.g. spreadsheet_id) so the
+                # LLM doesn't need to supply them on every call.
+                fn = functools.partial(fn, **config)
+                fn.__name__ = BUILTIN_TOOLS[name].__name__
+                fn.__doc__ = BUILTIN_TOOLS[name].__doc__
+            toolkit.register_tool_function(fn)
+            logger.info(f"Registered tool: {name} (config keys: {list(config)})")
         else:
             logger.warning(f"Unknown tool: {name}, skipping")
     return toolkit

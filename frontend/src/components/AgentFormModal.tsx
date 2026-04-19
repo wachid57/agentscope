@@ -113,10 +113,21 @@ export default function AgentFormModal({ agent, onClose }: Props) {
         return { ...f, tools: f.tools.filter(t => t.name !== toolName) }
       }
       const newTool: ToolConfig = {
-        name: toolName, type: 'builtin', description: desc, enabled: true, tags,
+        name: toolName, type: 'builtin', description: desc, enabled: true, tags, config: {},
       }
       return { ...f, tools: [...f.tools, newTool] }
     })
+  }
+
+  const setToolParam = (toolName: string, paramName: string, value: string) => {
+    setForm(f => ({
+      ...f,
+      tools: f.tools.map(t =>
+        t.name === toolName
+          ? { ...t, config: { ...(t.config as Record<string, string> ?? {}), [paramName]: value } }
+          : t
+      ),
+    }))
   }
 
   const addTag = () => {
@@ -362,27 +373,50 @@ export default function AgentFormModal({ agent, onClose }: Props) {
             <div className="grid grid-cols-2 gap-2">
               {builtinTools.map(tool => {
                 const enabled = form.tools.some(t => t.name === tool.name)
+                const toolCfg = form.tools.find(t => t.name === tool.name)
+                const cfgMap = (toolCfg?.config ?? {}) as Record<string, string>
                 return (
-                  <label
+                  <div
                     key={tool.name}
-                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-150 ${
+                    className={`rounded-xl border transition-all duration-150 ${
                       enabled
                         ? 'border-brand-300 bg-brand-50 dark:border-brand-700 dark:bg-brand-900/20'
                         : 'hover:border-slate-300 dark:hover:border-slate-600'
                     }`}
                     style={!enabled ? { borderColor: 'var(--border)' } : {}}
                   >
-                    <input
-                      type="checkbox"
-                      className="mt-0.5 accent-brand-500"
-                      checked={enabled}
-                      onChange={() => toggleTool(tool.name, tool.description, tool.tags)}
-                    />
-                    <div>
-                      <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{tool.name}</p>
-                      <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{tool.description}</p>
-                    </div>
-                  </label>
+                    <label className="flex items-start gap-3 p-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 accent-brand-500"
+                        checked={enabled}
+                        onChange={() => toggleTool(tool.name, tool.description, tool.tags)}
+                      />
+                      <div>
+                        <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{tool.name}</p>
+                        <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{tool.description}</p>
+                      </div>
+                    </label>
+
+                    {/* Param inputs shown only when tool is enabled and has params */}
+                    {enabled && tool.params && tool.params.length > 0 && (
+                      <div className="px-3 pb-3 space-y-2 border-t" style={{ borderColor: 'var(--border)' }}>
+                        {tool.params.map(p => (
+                          <div key={p.name}>
+                            <label className="text-[10px] font-medium mb-0.5 block" style={{ color: 'var(--text-muted)' }}>
+                              {p.label}{p.required && <span className="text-red-500 ml-0.5">*</span>}
+                            </label>
+                            <input
+                              className="input text-xs py-1"
+                              placeholder={p.placeholder ?? p.name}
+                              value={cfgMap[p.name] ?? ''}
+                              onChange={e => setToolParam(tool.name, p.name, e.target.value)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )
               })}
             </div>
