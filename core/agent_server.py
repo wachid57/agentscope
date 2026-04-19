@@ -207,32 +207,60 @@ async def run_agent_stream(
 
     user_msg = Msg(user_id, user_input, "user")
 
-    accumulated = ""
-    async for msg, _ in stream_printing_messages(
+    # Deduplicate complete responses across ReActAgent iterations.
+    # The first text message is streamed live for good UX; subsequent messages
+    # are buffered and only forwarded if their final content is new.
+    accumulated_per_id: dict[str, str] = {}
+    buffer_per_id: dict[str, list] = {}
+    sent_contents: set[str] = set()
+    first_text_msg_id: str | None = None
+
+    async for msg, is_last in stream_printing_messages(
         agents=[agent],
         coroutine_task=agent(user_msg),
     ):
         msg_dict = msg.to_dict()
         content = msg_dict.get("content", "")
+        msg_id = msg_dict.get("id", "")
 
         if not isinstance(content, str):
+            # Non-text messages (tool calls, observations) — always forward
             yield f"data: {json.dumps(msg_dict, ensure_ascii=False)}\n\n"
             continue
 
-        # Normalize to delta: some providers (e.g. DashScope) send cumulative
-        # content in each chunk instead of just the new token.
-        if content.startswith(accumulated):
-            delta = content[len(accumulated):]
-            accumulated = content
-        else:
-            # True delta mode (e.g. OpenAI) — new token doesn't start with what we have
-            delta = content
-            accumulated += content
+        prev = accumulated_per_id.get(msg_id, "")
 
-        if delta:
-            out = dict(msg_dict)
-            out["content"] = delta
-            yield f"data: {json.dumps(out, ensure_ascii=False)}\n\n"
+        # Normalize to delta: some providers send cumulative content per chunk
+        if content.startswith(prev):
+            delta = content[len(prev):]
+            accumulated_per_id[msg_id] = content
+        else:
+            delta = content
+            accumulated_per_id[msg_id] = prev + content
+
+        if first_text_msg_id is None:
+            first_text_msg_id = msg_id
+
+        if msg_id == first_text_msg_id:
+            # Stream first text message live for good UX
+            if delta:
+                out = dict(msg_dict)
+                out["content"] = delta
+                yield f"data: {json.dumps(out, ensure_ascii=False)}\n\n"
+            if is_last:
+                sent_contents.add(accumulated_per_id.get(msg_id, ""))
+        else:
+            # Buffer subsequent messages and deduplicate by content
+            if delta:
+                buffer_per_id.setdefault(msg_id, []).append((dict(msg_dict), delta))
+            if is_last:
+                final_content = accumulated_per_id.get(msg_id, "")
+                if final_content and final_content not in sent_contents:
+                    sent_contents.add(final_content)
+                    for buffered_dict, buffered_delta in buffer_per_id.get(msg_id, []):
+                        buffered_dict["content"] = buffered_delta
+                        yield f"data: {json.dumps(buffered_dict, ensure_ascii=False)}\n\n"
+                buffer_per_id.pop(msg_id, None)
 
     # Persist session state
     await session.save_session_state(
