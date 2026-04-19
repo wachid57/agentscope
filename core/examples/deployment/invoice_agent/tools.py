@@ -470,7 +470,7 @@ def send_telegram_message(
 
     try:
         resp = requests.post(
-            f"{base_url}/api/v1/agent/send",
+            f"{base_url}/api/agent/send",
             headers={
                 "X-API-KEY":    api_key,
                 "Content-Type": "application/json",
@@ -522,7 +522,7 @@ def send_telegram_file(
 
     try:
         resp = requests.post(
-            f"{base_url}/api/v1/agent/send-file",
+            f"{base_url}/api/agent/send-file",
             headers={
                 "X-API-KEY":    api_key,
                 "Content-Type": "application/json",
