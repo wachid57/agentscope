@@ -247,11 +247,11 @@ async def run_agent_stream(
                     msg_dict = dict(msg_dict)
                     msg_dict["content"] = content
                 else:
-                    # No text (e.g. pure tool-call block) — forward as-is
-                    yield f"data: {json.dumps(msg_dict, ensure_ascii=False)}\n\n"
+                    # No text blocks (thinking / tool-call only) — skip to
+                    # avoid sending raw arrays that the frontend can't display.
                     continue
             else:
-                yield f"data: {json.dumps(msg_dict, ensure_ascii=False)}\n\n"
+                # Non-list, non-string — skip silently
                 continue
 
         prev = accumulated_per_id.get(msg_id, "")

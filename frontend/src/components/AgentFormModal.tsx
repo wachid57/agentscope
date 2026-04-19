@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Plus, Trash2, Search, ChevronDown } from 'lucide-react'
+import { X, Plus, Trash2, Search, ChevronDown, MoreVertical, Settings2 } from 'lucide-react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { agentsApi } from '../api/agents'
@@ -33,6 +33,7 @@ export default function AgentFormModal({ agent, onClose }: Props) {
   const [tagInput, setTagInput] = useState('')
   const [modelSearch, setModelSearch] = useState('')
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false)
+  const [expandedToolParams, setExpandedToolParams] = useState<Set<string>>(new Set())
   const modelDropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -375,6 +376,16 @@ export default function AgentFormModal({ agent, onClose }: Props) {
                 const enabled = form.tools.some(t => t.name === tool.name)
                 const toolCfg = form.tools.find(t => t.name === tool.name)
                 const cfgMap = (toolCfg?.config ?? {}) as Record<string, string>
+                const hasParams = tool.params && tool.params.length > 0
+                const paramsExpanded = expandedToolParams.has(tool.name)
+                const toggleParams = (e: React.MouseEvent) => {
+                  e.preventDefault()
+                  setExpandedToolParams(prev => {
+                    const next = new Set(prev)
+                    next.has(tool.name) ? next.delete(tool.name) : next.add(tool.name)
+                    return next
+                  })
+                }
                 return (
                   <div
                     key={tool.name}
@@ -385,23 +396,42 @@ export default function AgentFormModal({ agent, onClose }: Props) {
                     }`}
                     style={!enabled ? { borderColor: 'var(--border)' } : {}}
                   >
-                    <label className="flex items-start gap-3 p-3 cursor-pointer">
+                    {/* Header row: checkbox + name + 3-dot menu */}
+                    <div className="flex items-start gap-2 p-3">
                       <input
                         type="checkbox"
-                        className="mt-0.5 accent-brand-500"
+                        className="mt-0.5 accent-brand-500 shrink-0 cursor-pointer"
                         checked={enabled}
-                        onChange={() => toggleTool(tool.name, tool.description, tool.tags)}
+                        onChange={() => {
+                          toggleTool(tool.name, tool.description, tool.tags)
+                          // Auto-expand params when enabling a tool that has params
+                          if (!enabled && hasParams) {
+                            setExpandedToolParams(prev => new Set(prev).add(tool.name))
+                          }
+                        }}
                       />
-                      <div>
-                        <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{tool.name}</p>
-                        <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{tool.description}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{tool.name}</p>
+                        <p className="text-[10px] mt-0.5 line-clamp-2" style={{ color: 'var(--text-muted)' }}>{tool.description}</p>
                       </div>
-                    </label>
+                      {/* 3-dot menu — only for tools with params */}
+                      {enabled && hasParams && (
+                        <button
+                          type="button"
+                          onClick={toggleParams}
+                          title="Edit konfigurasi tool"
+                          className="shrink-0 p-1 rounded-md transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                          style={{ color: paramsExpanded ? 'var(--brand-600, #2563eb)' : 'var(--text-muted)' }}
+                        >
+                          <Settings2 size={13} />
+                        </button>
+                      )}
+                    </div>
 
-                    {/* Param inputs shown only when tool is enabled and has params */}
-                    {enabled && tool.params && tool.params.length > 0 && (
-                      <div className="px-3 pb-3 space-y-2 border-t" style={{ borderColor: 'var(--border)' }}>
-                        {tool.params.map(p => (
+                    {/* Params panel — shown when expanded */}
+                    {enabled && hasParams && paramsExpanded && (
+                      <div className="px-3 pb-3 space-y-2 border-t pt-2" style={{ borderColor: 'var(--border)' }}>
+                        {tool.params!.map(p => (
                           <div key={p.name}>
                             <label className="text-[10px] font-medium mb-0.5 block" style={{ color: 'var(--text-muted)' }}>
                               {p.label}{p.required && <span className="text-red-500 ml-0.5">*</span>}
