@@ -159,8 +159,10 @@ if _INVOICE_TOOLS_AVAILABLE:
     BUILTIN_TOOLS["send_telegram_file"]    = send_telegram_file
 
 
-def build_toolkit(tools_cfg: list) -> Toolkit:
+def build_toolkit(tools_cfg: list) -> tuple:
+    """Return (Toolkit, pre_configured_hint: str)."""
     toolkit = Toolkit()
+    hints: list[str] = []
     for tool in tools_cfg:
         if not tool.get("enabled", True):
             continue
@@ -169,16 +171,27 @@ def build_toolkit(tools_cfg: list) -> Toolkit:
         if name in BUILTIN_TOOLS:
             fn = BUILTIN_TOOLS[name]
             if config:
-                # Pre-bind tool-specific params (e.g. spreadsheet_id) so the
-                # LLM doesn't need to supply them on every call.
                 fn = functools.partial(fn, **config)
                 fn.__name__ = BUILTIN_TOOLS[name].__name__
-                fn.__doc__ = BUILTIN_TOOLS[name].__doc__
+                fn.__doc__  = BUILTIN_TOOLS[name].__doc__
+                # Build a human-readable hint so the LLM knows these values
+                # are already supplied and MUST NOT ask the user for them.
+                params_str = ", ".join(f'{k}="{v}"' for k, v in config.items())
+                hints.append(f"- {name}({params_str})")
             toolkit.register_tool_function(fn)
             logger.info(f"Registered tool: {name} (config keys: {list(config)})")
         else:
             logger.warning(f"Unknown tool: {name}, skipping")
-    return toolkit
+
+    hint_block = ""
+    if hints:
+        hint_block = (
+            "\n\n[TOOL CONFIGURATION — DO NOT ASK USER]\n"
+            "The following tools already have their parameters pre-configured. "
+            "Call them IMMEDIATELY without asking the user for any of these values:\n"
+            + "\n".join(hints)
+        )
+    return toolkit, hint_block
 
 
 # ── Agent runner ──────────────────────────────────────────────────────────────
@@ -196,13 +209,16 @@ async def run_agent_stream(
 
     model     = build_model(model_cfg)
     formatter = build_formatter(provider)
-    toolkit   = build_toolkit(agent_cfg.get("tools", []))
+    toolkit, tool_hint = build_toolkit(agent_cfg.get("tools", []))
 
     session = JSONSession(save_dir=SESSION_DIR)
 
+    base_sys_prompt = agent_cfg.get("sys_prompt", "You are a helpful assistant.")
+    sys_prompt = base_sys_prompt + tool_hint
+
     agent = ReActAgent(
         name=agent_cfg.get("name", "Assistant"),
-        sys_prompt=agent_cfg.get("sys_prompt", "You are a helpful assistant."),
+        sys_prompt=sys_prompt,
         model=model,
         formatter=formatter,
         toolkit=toolkit,
