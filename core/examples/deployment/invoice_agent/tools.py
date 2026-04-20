@@ -182,27 +182,24 @@ def read_gws_sheet(
     gws_tenant_id: str = "",
 ) -> str:
     """Read a Google Sheets spreadsheet through the priva-gws MCP service and
-    return structured invoice data (customer_name, phone, tax_percent, items).
+    return all rows as a list of dicts keyed by column headers.
 
-    The sheet must have a header row (case-insensitive) containing at least:
-        customer_name | description | qty | price
-    Optional columns: phone, tax_percent
+    Auto-detects the header row (the row with the most non-empty cells).
+    Column names are extracted from the first line of each header cell
+    (handles multi-line cells like "invoice_id\\nDescription\\nFormat: ...").
 
     Args:
         spreadsheet_id: Google Sheets ID (from the URL: /d/<ID>/edit).
         range_:         A1 notation range to read, e.g. "Sheet1!A1:F100".
                         Defaults to "A1:Z1000" (entire sheet).
-        gws_api_url:    Base URL of priva-gws, e.g. "http://localhost:8083".
-                        Falls back to env GWS_API_URL.
-        gws_api_key:    API key for priva-gws (Bearer token).
-                        Falls back to env GWS_API_KEY.
-        gws_user_id:    User ID that has Google OAuth connected in priva-gws.
-                        Falls back to env GWS_USER_ID.
+        gws_api_url:    Base URL of priva-gws. Falls back to env GWS_API_URL.
+        gws_api_key:    API key for priva-gws. Falls back to env GWS_API_KEY.
+        gws_user_id:    User ID with Google OAuth. Falls back to env GWS_USER_ID.
         gws_tenant_id:  Tenant ID in priva-gws. Falls back to env GWS_TENANT_ID.
 
     Returns:
-        JSON string with keys: customer_name, phone, tax_percent, items
-        (same format as read_excel_invoice), or {"error": "..."} on failure.
+        JSON string: {"columns": [...], "rows": [{col: val, ...}, ...], "total": N}
+        or {"error": "..."} on failure.
     """
     base_url  = gws_api_url   or os.environ.get("GWS_API_URL",   "http://localhost:8083")
     api_key   = gws_api_key   or os.environ.get("GWS_API_KEY",   "")
@@ -214,10 +211,7 @@ def read_gws_sheet(
 
     payload: dict[str, Any] = {
         "action": "google.sheets.read",
-        "params": {
-            "spreadsheet_id": spreadsheet_id,
-            "range": range_,
-        },
+        "params": {"spreadsheet_id": spreadsheet_id, "range": range_},
         "metadata": {},
     }
     if user_id:
@@ -228,10 +222,7 @@ def read_gws_sheet(
     try:
         resp = requests.post(
             f"{base_url}/api/v1.0/mcp/google",
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type":  "application/json",
-            },
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json=payload,
             timeout=30,
         )
@@ -247,57 +238,39 @@ def read_gws_sheet(
     if not raw_values:
         return json.dumps({"error": "Sheet is empty or range returned no data"})
 
-    # Parse header row (case-insensitive)
-    headers = [str(h).strip().lower() if h else "" for h in raw_values[0]]
+    # Auto-detect header row: the row with the most non-empty cells
+    header_idx = max(range(len(raw_values)), key=lambda i: sum(1 for c in raw_values[i] if str(c).strip()))
 
-    def col(name: str) -> int | None:
-        return headers.index(name) if name in headers else None
+    # Extract column names — take first line of multi-line cells, strip whitespace
+    raw_headers = raw_values[header_idx]
+    columns = [str(h).split("\n")[0].strip().lower() for h in raw_headers]
+    # Deduplicate blank column names
+    seen: dict[str, int] = {}
+    clean_columns = []
+    for c in columns:
+        if not c:
+            c = f"col_{len(clean_columns)}"
+        if c in seen:
+            seen[c] += 1
+            c = f"{c}_{seen[c]}"
+        else:
+            seen[c] = 0
+        clean_columns.append(c)
 
-    c_customer = col("customer_name")
-    c_phone    = col("phone")
-    c_desc     = col("description")
-    c_qty      = col("qty")
-    c_price    = col("price")
-    c_tax      = col("tax_percent")
-
-    if c_desc is None or c_qty is None or c_price is None:
-        return json.dumps({"error": f"Required columns missing. Found: {headers}"})
-
-    customer_name = ""
-    phone = ""
-    tax_percent = 0.0
-    items = []
-
-    for row in raw_values[1:]:
-        # pad short rows
-        while len(row) <= max(filter(None, [c_customer, c_phone, c_desc, c_qty, c_price, c_tax, 0])):
-            row.append("")
-
-        if c_customer is not None and row[c_customer]:
-            customer_name = str(row[c_customer]).strip()
-        if c_phone is not None and row[c_phone]:
-            phone = str(row[c_phone]).strip()
-        if c_tax is not None and row[c_tax]:
-            try:
-                tax_percent = float(row[c_tax])
-            except (ValueError, TypeError):
-                pass
-
-        desc  = str(row[c_desc]).strip()  if row[c_desc]  else ""
-        try:
-            qty   = float(row[c_qty])   if row[c_qty]   else 0
-            price = float(row[c_price]) if row[c_price] else 0
-        except (ValueError, TypeError):
-            qty, price = 0, 0
-
-        if desc:
-            items.append({"description": desc, "qty": qty, "price": price})
+    # Build rows as dicts, skip fully empty rows
+    rows = []
+    for raw_row in raw_values[header_idx + 1:]:
+        if not any(str(c).strip() for c in raw_row):
+            continue
+        # Pad short rows
+        padded = list(raw_row) + [""] * (len(clean_columns) - len(raw_row))
+        row_dict = {clean_columns[i]: str(padded[i]).strip() for i in range(len(clean_columns))}
+        rows.append(row_dict)
 
     return json.dumps({
-        "customer_name": customer_name,
-        "phone":         phone,
-        "tax_percent":   tax_percent,
-        "items":         items,
+        "columns": clean_columns,
+        "rows":    rows,
+        "total":   len(rows),
     }, ensure_ascii=False)
 
 
