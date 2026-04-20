@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -109,15 +110,19 @@ func (h *SettingsHandler) TestInvoice(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"ok": false, "message": "Invoice Base URL belum dikonfigurasi"})
 	}
 
+	if apiKey == "" {
+		return c.Status(400).JSON(fiber.Map{"ok": false, "message": "Invoice API Key belum dikonfigurasi"})
+	}
+
+	// Test via external endpoint (API Key auth) with a dry-run ping payload
 	client := &http.Client{Timeout: 8 * time.Second}
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api/v1.0/invoices", baseURL), nil)
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/v1.0/external/invoices", baseURL),
+		bytes.NewBufferString(`{"customer_name":"__ping__","items":[{"description":"ping","qty":1,"price":1}]}`))
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"ok": false, "message": "invalid URL: " + err.Error()})
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+apiKey)
-	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 
 	resp, err := client.Do(req)
 	if err != nil {

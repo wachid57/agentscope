@@ -7,7 +7,22 @@
       "Bash(curl -s -X POST http://172.17.0.1:8081/api/v1.0/external/invoices -H 'Content-Type: application/json' -d '{\"customer_name\":\"Test\",\"items\":[{\"description\":\"test\",\"qty\":1,\"price\":100}],\"tax_percent\":5}')",
       "Bash(curl -s -X POST http://172.17.0.1:8081/api/v1.0/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@example.com\",\"password\":\"password\"}')",
       "Bash(./run-apps.sh rebuild *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(curl -s -X POST http://172.17.0.1:8081/api/v1.0/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@example.com\",\"password\":\"admin123\"}')",
+      "Bash(curl -s -X POST http://172.17.0.1:8081/api/v1.0/api-keys -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ0ZW5hbnRfaWQiOjEsInJvbGVzIjpbImFkbWluIl0sImV4cCI6MTc3Njc3MTI1NiwiaWF0IjoxNzc2Njg0ODU2fQ.gjUexdguLIB9LR4k7ry6rQKFmNEcV2AIKIv7J2Clxw0' -H 'Content-Type: application/json' -d '{\"name\":\"priva-agent\"}')",
+      "Bash(curl -s -X PUT http://localhost:8088/api/settings -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s -X POST http://localhost:8088/api/settings/test-invoice)",
+      "Bash(curl -s http://172.17.0.1:8081/api/v1.0/invoices -H 'Authorization: Bearer 9a5b22824aed02c74690ac2f0e6e6d3088a59e47608a4deafbdfe88d56fa0f1b')",
+      "Bash(curl -s http://172.17.0.1:8081/api/v1.0/invoices -H 'X-API-Key: 9a5b22824aed02c74690ac2f0e6e6d3088a59e47608a4deafbdfe88d56fa0f1b')",
+      "Bash(curl -s -X POST http://172.17.0.1:8081/api/v1.0/external/invoices -H 'Authorization: Bearer 9a5b22824aed02c74690ac2f0e6e6d3088a59e47608a4deafbdfe88d56fa0f1b' -H 'Content-Type: application/json' -d '{\"customer_name\":\"Test\",\"items\":[{\"description\":\"Test item\",\"qty\":1,\"price\":100000}],\"tax_percent\":5}')",
+      "Bash(curl -s -X POST http://172.17.0.1:8081/api/v1.0/external/invoices -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJ0ZW5hbnRfaWQiOjEsInJvbGVzIjpbImFkbWluIl0sImV4cCI6MTc3Njc3MTI1NiwiaWF0IjoxNzc2Njg0ODU2fQ.gjUexdguLIB9LR4k7ry6rQKFmNEcV2AIKIv7J2Clxw0' -H 'Content-Type: application/json' -d '{\"customer_name\":\"Test Mitra\",\"items\":[{\"description\":\"Layanan MARKETER\",\"qty\":1,\"price\":150000}],\"tax_percent\":5}')",
+      "Bash(curl -s -X POST http://172.17.0.1:8081/api/v1.0/external/invoices -H 'Authorization: Bearer 9a5b22824aed02c74690ac2f0e6e6d3088a59e47608a4deafbdfe88d56fa0f1b' -H 'Content-Type: application/json' -d '{\"customer_name\":\"Mitra A\",\"items\":[{\"description\":\"Layanan MARKETER\",\"qty\":1,\"price\":150000}],\"tax_percent\":5}')",
+      "Bash(curl -sv -X POST http://172.17.0.1:8081/api/v1.0/external/invoices -H 'Authorization: Bearer 9a5b22824aed02c74690ac2f0e6e6d3088a59e47608a4deafbdfe88d56fa0f1b' -H 'Content-Type: application/json' -d '{\"customer_name\":\"Mitra A\",\"items\":[{\"description\":\"test\",\"qty\":1,\"price\":100}],\"tax_percent\":5}')",
+      "Bash(docker rm *)",
+      "Bash(curl -s http://172.17.0.1:8081/api/v1.0/auth/login -X POST -H \"Content-Type: application/json\" -d '{}')"
+    ],
+    "additionalDirectories": [
+      "/data/docker-data/priva-invoice/backend/cmd"
     ]
   }
 }
