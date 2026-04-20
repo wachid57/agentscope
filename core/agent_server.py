@@ -389,10 +389,12 @@ async def chat():
 
     # Inject integration settings into env so tool functions can pick them up
     env_map = {
-        "gws_api_key":   "GWS_API_KEY",
-        "gws_base_url":  "GWS_API_URL",
-        "gws_user_id":   "GWS_USER_ID",
-        "gws_tenant_id": "GWS_TENANT_ID",
+        "gws_api_key":      "GWS_API_KEY",
+        "gws_base_url":     "GWS_API_URL",
+        "gws_user_id":      "GWS_USER_ID",
+        "gws_tenant_id":    "GWS_TENANT_ID",
+        "invoice_base_url": "INVOICE_API_URL",
+        "invoice_api_key":  "INVOICE_API_KEY",
     }
     for cfg_key, env_key in env_map.items():
         val = integration_env.get(cfg_key, "")

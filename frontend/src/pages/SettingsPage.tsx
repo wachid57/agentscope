@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Settings, Bell, Globe, Database, Trash2, Save, Webhook, Plug, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
+import { Settings, Bell, Globe, Database, Trash2, Save, Webhook, Plug, CheckCircle2, XCircle, Loader2, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSetNavSubtitle } from '../context/NavSubtitle'
 import { systemApi } from '../api/system'
@@ -17,11 +17,16 @@ export default function SettingsPage() {
   })
 
   const [gws, setGws] = useState({ baseUrl: '', apiKey: '' })
+  const [invoice, setInvoice] = useState({ baseUrl: '', apiKey: '' })
 
   useEffect(() => {
     setGws({
       baseUrl: dbSettings?.['gws_base_url'] || localStorage.getItem('gws_base_url') || '',
       apiKey:  dbSettings?.['gws_api_key']  || localStorage.getItem('gws_api_key')  || '',
+    })
+    setInvoice({
+      baseUrl: dbSettings?.['invoice_base_url'] || localStorage.getItem('invoice_base_url') || '',
+      apiKey:  dbSettings?.['invoice_api_key']  || localStorage.getItem('invoice_api_key')  || '',
     })
   }, [dbSettings])
 
@@ -51,6 +56,8 @@ export default function SettingsPage() {
   type TestStatus = 'idle' | 'loading' | 'ok' | 'error'
   const [testStatus, setTestStatus] = useState<TestStatus>('idle')
   const [testMsg, setTestMsg] = useState('')
+  const [invoiceTestStatus, setInvoiceTestStatus] = useState<TestStatus>('idle')
+  const [invoiceTestMsg, setInvoiceTestMsg] = useState('')
 
   const testConnection = async () => {
     const url = gws.baseUrl.trim()
@@ -58,21 +65,41 @@ export default function SettingsPage() {
     setTestStatus('loading')
     setTestMsg('')
     try {
-      // Simpan dulu ke DB agar backend bisa baca nilai terbaru
       await systemApi.updateSettings({ gws_base_url: url, gws_api_key: gws.apiKey.trim() })
-      // Test dari server side — tidak kena CORS/PNA browser
       const res = await fetch('/api/settings/test-gws', { method: 'POST' })
       const json = await res.json()
-      if (json.ok) {
-        setTestStatus('ok')
-        setTestMsg(json.message)
-      } else {
-        setTestStatus('error')
-        setTestMsg(json.message)
-      }
-    } catch (e: unknown) {
+      if (json.ok) { setTestStatus('ok'); setTestMsg(json.message) }
+      else { setTestStatus('error'); setTestMsg(json.message) }
+    } catch {
       setTestStatus('error')
       setTestMsg('Gagal menghubungi backend')
+    }
+  }
+
+  const saveInvoice = (e: React.FormEvent) => {
+    e.preventDefault()
+    const url = invoice.baseUrl.trim()
+    const key = invoice.apiKey.trim()
+    localStorage.setItem('invoice_base_url', url)
+    localStorage.setItem('invoice_api_key', key)
+    toast.success('Invoice settings saved')
+    gwsMut.mutate({ invoice_base_url: url, invoice_api_key: key })
+  }
+
+  const testInvoiceConnection = async () => {
+    const url = invoice.baseUrl.trim()
+    if (!url) { toast.error('Invoice Base URL belum diisi'); return }
+    setInvoiceTestStatus('loading')
+    setInvoiceTestMsg('')
+    try {
+      await systemApi.updateSettings({ invoice_base_url: url, invoice_api_key: invoice.apiKey.trim() })
+      const res = await fetch('/api/settings/test-invoice', { method: 'POST' })
+      const json = await res.json()
+      if (json.ok) { setInvoiceTestStatus('ok'); setInvoiceTestMsg(json.message) }
+      else { setInvoiceTestStatus('error'); setInvoiceTestMsg(json.message) }
+    } catch {
+      setInvoiceTestStatus('error')
+      setInvoiceTestMsg('Gagal menghubungi backend')
     }
   }
 
@@ -243,6 +270,66 @@ export default function SettingsPage() {
                 </button>
                 <button type="submit" className="btn-primary">
                   <Save size={14} /> Save GWS Settings
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Invoice Integration */}
+          <div className="card">
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-elevated)' }}>
+                <FileText size={15} className="text-brand-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Invoice Integration</h3>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>priva-invoice API untuk generate PDF invoice</p>
+              </div>
+            </div>
+            <form onSubmit={saveInvoice} className="space-y-4">
+              <div>
+                <label className="label">Invoice Base URL</label>
+                <input
+                  className="input font-mono"
+                  value={invoice.baseUrl}
+                  onChange={e => setInvoice(v => ({ ...v, baseUrl: e.target.value }))}
+                  placeholder="http://172.17.0.1:8081"
+                />
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>URL priva-invoice backend (port 8081)</p>
+              </div>
+              <div>
+                <label className="label">API Key</label>
+                <input
+                  className="input font-mono"
+                  type="password"
+                  value={invoice.apiKey}
+                  onChange={e => setInvoice(v => ({ ...v, apiKey: e.target.value }))}
+                  placeholder="Bearer token"
+                />
+              </div>
+              {invoiceTestStatus !== 'idle' && (
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
+                  invoiceTestStatus === 'loading' ? 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                  : invoiceTestStatus === 'ok'    ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400'
+                  :                                 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400'
+                }`}>
+                  {invoiceTestStatus === 'loading' && <Loader2 size={13} className="animate-spin shrink-0" />}
+                  {invoiceTestStatus === 'ok'      && <CheckCircle2 size={13} className="shrink-0" />}
+                  {invoiceTestStatus === 'error'   && <XCircle size={13} className="shrink-0" />}
+                  <span>{invoiceTestStatus === 'loading' ? 'Menguji koneksi…' : invoiceTestMsg}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  type="button"
+                  onClick={testInvoiceConnection}
+                  disabled={invoiceTestStatus === 'loading'}
+                  className="btn-outline flex items-center gap-2 text-sm"
+                >
+                  <Plug size={13} /> Test Connection
+                </button>
+                <button type="submit" className="btn-primary">
+                  <Save size={14} /> Save Invoice Settings
                 </button>
               </div>
             </form>

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import json,sys; print\\(json.dumps\\(json.load\\(sys.stdin\\)['data'], indent=2\\)\\)\")",
+      "Bash(curl -s http://172.17.0.1:8081/health)",
+      "Bash(curl -s http://172.17.0.1:8081/api/invoices)",
+      "Bash(curl -s -X POST http://172.17.0.1:8081/api/v1.0/external/invoices -H 'Content-Type: application/json' -d '{\"customer_name\":\"Test\",\"items\":[{\"description\":\"test\",\"qty\":1,\"price\":100}],\"tax_percent\":5}')",
+      "Bash(curl -s -X POST http://172.17.0.1:8081/api/v1.0/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@example.com\",\"password\":\"password\"}')",
+      "Bash(./run-apps.sh rebuild *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

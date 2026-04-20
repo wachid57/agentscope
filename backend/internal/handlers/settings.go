@@ -95,6 +95,46 @@ func (h *SettingsHandler) TestGWS(c *fiber.Ctx) error {
 	})
 }
 
+// POST /api/settings/test-invoice
+func (h *SettingsHandler) TestInvoice(c *fiber.Ctx) error {
+	settings, err := db.GetAllSettings()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"ok": false, "message": "failed to load settings"})
+	}
+
+	baseURL := strings.TrimRight(settings["invoice_base_url"], "/")
+	apiKey := settings["invoice_api_key"]
+
+	if baseURL == "" {
+		return c.Status(400).JSON(fiber.Map{"ok": false, "message": "Invoice Base URL belum dikonfigurasi"})
+	}
+
+	client := &http.Client{Timeout: 8 * time.Second}
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api/v1.0/invoices", baseURL), nil)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"ok": false, "message": "invalid URL: " + err.Error()})
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return c.JSON(fiber.Map{"ok": false, "message": "Tidak dapat terhubung: " + err.Error()})
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return c.JSON(fiber.Map{"ok": false, "message": "Unauthorized — API Key salah atau tidak valid"})
+	}
+	if resp.StatusCode >= 500 {
+		return c.JSON(fiber.Map{"ok": false, "message": fmt.Sprintf("HTTP %d dari Invoice server", resp.StatusCode)})
+	}
+
+	return c.JSON(fiber.Map{"ok": true, "message": "Terhubung ke priva-invoice ✓"})
+}
+
 // POST /api/settings/test-scheduler/:id
 // Toggle scheduler on→off dari server side untuk trigger sekali jalan
 func (h *SettingsHandler) TestScheduler(c *fiber.Ctx) error {
