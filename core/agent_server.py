@@ -159,6 +159,37 @@ if _INVOICE_TOOLS_AVAILABLE:
     BUILTIN_TOOLS["send_telegram_file"]    = send_telegram_file
 
 
+def _strip_bound_params_from_doc(doc: str, bound_keys: set) -> str:
+    """Remove lines describing pre-bound parameters from a numpy-style docstring."""
+    if not doc or not bound_keys:
+        return doc
+    lines = doc.splitlines()
+    out: list[str] = []
+    skip = False
+    param_indent: int = 0
+    for line in lines:
+        stripped = line.strip()
+        # Measure indent of this line
+        indent = len(line) - len(line.lstrip())
+        # Detect "param_name:" line for a bound key
+        is_bound_param = any(
+            stripped.startswith(k + ":") or stripped.startswith(k + " :")
+            for k in bound_keys
+        )
+        if is_bound_param:
+            skip = True
+            param_indent = indent
+            continue
+        if skip:
+            # Continuation lines have deeper indent than the param line
+            if indent > param_indent and stripped:
+                continue  # still part of this param's description
+            else:
+                skip = False  # next param or section — stop skipping
+        out.append(line)
+    return "\n".join(out)
+
+
 def build_toolkit(tools_cfg: list) -> tuple:
     """Return (Toolkit, pre_configured_hint: str)."""
     toolkit = Toolkit()
@@ -173,9 +204,10 @@ def build_toolkit(tools_cfg: list) -> tuple:
             if config:
                 fn = functools.partial(fn, **config)
                 fn.__name__ = BUILTIN_TOOLS[name].__name__
-                fn.__doc__  = BUILTIN_TOOLS[name].__doc__
-                # Build a human-readable hint so the LLM knows these values
-                # are already supplied and MUST NOT ask the user for them.
+                # Strip pre-bound param descriptions so LLM never sees them
+                fn.__doc__ = _strip_bound_params_from_doc(
+                    BUILTIN_TOOLS[name].__doc__, set(config.keys())
+                )
                 params_str = ", ".join(f'{k}="{v}"' for k, v in config.items())
                 hints.append(f"- {name}({params_str})")
             toolkit.register_tool_function(fn)
