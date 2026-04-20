@@ -21,7 +21,8 @@ from agentscope.formatter import (
     OllamaChatFormatter,
 )
 from agentscope.memory import InMemoryMemory
-from agentscope.message import Msg
+from agentscope.message import Msg, TextBlock
+from agentscope.tool import ToolResponse
 from agentscope.model import (
     OpenAIChatModel,
     AnthropicChatModel,
@@ -190,6 +191,18 @@ def _strip_bound_params_from_doc(doc: str, bound_keys: set) -> str:
     return "\n".join(out)
 
 
+def _wrap_tool_fn(fn):
+    """Wrap a plain str-returning tool function to return ToolResponse."""
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        result = fn(*args, **kwargs)
+        if isinstance(result, ToolResponse):
+            return result
+        text = result if isinstance(result, str) else json.dumps(result, ensure_ascii=False)
+        return ToolResponse(content=[TextBlock(type="text", text=text)])
+    return wrapper
+
+
 def build_toolkit(tools_cfg: list) -> tuple:
     """Return (Toolkit, pre_configured_hint: str)."""
     toolkit = Toolkit()
@@ -210,7 +223,7 @@ def build_toolkit(tools_cfg: list) -> tuple:
                 )
                 params_str = ", ".join(f'{k}="{v}"' for k, v in config.items())
                 hints.append(f"- {name}({params_str})")
-            toolkit.register_tool_function(fn)
+            toolkit.register_tool_function(_wrap_tool_fn(fn))
             logger.info(f"Registered tool: {name} (config keys: {list(config)})")
         else:
             logger.warning(f"Unknown tool: {name}, skipping")
@@ -368,10 +381,23 @@ async def chat():
     if not data:
         return jsonify({"error": "Invalid JSON body"}), 400
 
-    agent_cfg  = data.get("agent_config")
-    user_input = data.get("user_input", "")
-    user_id    = data.get("user_id", "anonymous")
-    session_id = data.get("session_id", "")
+    agent_cfg       = data.get("agent_config")
+    user_input      = data.get("user_input", "")
+    user_id         = data.get("user_id", "anonymous")
+    session_id      = data.get("session_id", "")
+    integration_env = data.get("integration_env") or {}
+
+    # Inject integration settings into env so tool functions can pick them up
+    env_map = {
+        "gws_api_key":   "GWS_API_KEY",
+        "gws_base_url":  "GWS_API_URL",
+        "gws_user_id":   "GWS_USER_ID",
+        "gws_tenant_id": "GWS_TENANT_ID",
+    }
+    for cfg_key, env_key in env_map.items():
+        val = integration_env.get(cfg_key, "")
+        if val:
+            os.environ[env_key] = val
 
     if not agent_cfg:
         return jsonify({"error": "agent_config is required"}), 400

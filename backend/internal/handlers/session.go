@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/agentscope/web-backend/internal/db"
 	"github.com/agentscope/web-backend/internal/models"
 	"github.com/agentscope/web-backend/internal/store"
 	"github.com/gofiber/fiber/v2"
@@ -134,11 +135,23 @@ func (h *SessionHandler) Chat(c *fiber.Ctx) error {
 
 		if coreAvailable {
 			// ── Real AI: proxy to Python agent_server.py ──────────────────
+			// Inject GWS/Telegram/integration settings so tools can use them
+			integrationEnv := map[string]string{}
+			if settings, err := db.GetAllSettings(); err == nil {
+				for _, k := range []string{
+					"gws_api_key", "gws_base_url", "gws_user_id", "gws_tenant_id",
+				} {
+					if v, ok := settings[k]; ok && v != "" {
+						integrationEnv[k] = v
+					}
+				}
+			}
 			payload := map[string]any{
-				"agent_config": agent, // full agent config including model, tools, etc.
-				"user_input":   req.UserInput,
-				"user_id":      req.UserID,
-				"session_id":   sess.ID,
+				"agent_config":     agent, // full agent config including model, tools, etc.
+				"user_input":       req.UserInput,
+				"user_id":          req.UserID,
+				"session_id":       sess.ID,
+				"integration_env":  integrationEnv,
 			}
 			b, _ := json.Marshal(payload)
 
