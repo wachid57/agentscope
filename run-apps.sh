@@ -133,6 +133,26 @@ cmd_build_core() {
     log "Core build complete. Run './run-apps.sh start' to start."
 }
 
+cmd_rebuild() {
+    local services=("${@}")
+    if [[ ${#services[@]} -eq 0 ]]; then
+        # rebuild all
+        log "Rebuilding all images..."
+        DOCKER_BUILDKIT=1 $COMPOSE build --pull --progress=plain
+        log "Restarting all services..."
+        $COMPOSE up -d --force-recreate
+    else
+        log "Rebuilding: ${services[*]}"
+        DOCKER_BUILDKIT=1 $COMPOSE build --pull --progress=plain "${services[@]}"
+        log "Restarting: ${services[*]}"
+        $COMPOSE up -d --force-recreate --no-deps "${services[@]}"
+    fi
+    echo ""
+    log "Rebuild complete."
+    log "  Frontend  → http://localhost:3030"
+    log "  API       → http://localhost:8088"
+}
+
 cmd_web_logs() {
     log "Tailing backend + frontend logs..."
     $COMPOSE logs -f --tail=100 backend frontend
@@ -190,6 +210,7 @@ usage() {
     echo "  web-build         Rebuild web images only"
     echo "  web-logs          Tail backend + frontend logs"
     echo "  build-core        Rebuild Python core image with full pip progress output"
+    echo "  rebuild [svc...]  Rebuild image(s) then restart — all if none specified"
     echo ""
     echo -e "${CYAN}Services:${NC}"
     echo "  core              Python PrivaAgent runtime"
@@ -232,6 +253,7 @@ main() {
         web-build)    cmd_web_build ;;
         web-logs)     cmd_web_logs ;;
         build-core)   cmd_build_core ;;
+        rebuild)      cmd_rebuild "$@" ;;
         help|--help|-h|*) usage ;;
     esac
 }
