@@ -19,7 +19,11 @@
       "Bash(curl -s -X POST http://172.17.0.1:8081/api/v1.0/external/invoices -H 'Authorization: Bearer 9a5b22824aed02c74690ac2f0e6e6d3088a59e47608a4deafbdfe88d56fa0f1b' -H 'Content-Type: application/json' -d '{\"customer_name\":\"Mitra A\",\"items\":[{\"description\":\"Layanan MARKETER\",\"qty\":1,\"price\":150000}],\"tax_percent\":5}')",
       "Bash(curl -sv -X POST http://172.17.0.1:8081/api/v1.0/external/invoices -H 'Authorization: Bearer 9a5b22824aed02c74690ac2f0e6e6d3088a59e47608a4deafbdfe88d56fa0f1b' -H 'Content-Type: application/json' -d '{\"customer_name\":\"Mitra A\",\"items\":[{\"description\":\"test\",\"qty\":1,\"price\":100}],\"tax_percent\":5}')",
       "Bash(docker rm *)",
-      "Bash(curl -s http://172.17.0.1:8081/api/v1.0/auth/login -X POST -H \"Content-Type: application/json\" -d '{}')"
+      "Bash(curl -s http://172.17.0.1:8081/api/v1.0/auth/login -X POST -H \"Content-Type: application/json\" -d '{}')",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\)['data']; [print\\(k,':',v\\) for k,v in d.items\\(\\) if 'telegram' in k.lower\\(\\)]\")",
+      "Bash(curl -s http://172.22.0.1:8080/health)",
+      "Bash(curl -s -X POST http://172.17.0.1:8080/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@example.com\",\"password\":\"admin123\"}')"
     ],
     "additionalDirectories": [
       "/data/docker-data/priva-invoice/backend/cmd"

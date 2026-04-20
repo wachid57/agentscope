@@ -393,8 +393,10 @@ async def chat():
         "gws_base_url":     "GWS_API_URL",
         "gws_user_id":      "GWS_USER_ID",
         "gws_tenant_id":    "GWS_TENANT_ID",
-        "invoice_base_url": "INVOICE_API_URL",
-        "invoice_api_key":  "INVOICE_API_KEY",
+        "invoice_base_url":  "INVOICE_API_URL",
+        "invoice_api_key":   "INVOICE_API_KEY",
+        "telegram_base_url": "TELEGRAM_API_URL",
+        "telegram_api_key":  "TELEGRAM_API_KEY",
     }
     for cfg_key, env_key in env_map.items():
         val = integration_env.get(cfg_key, "")

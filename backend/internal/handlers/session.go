@@ -141,6 +141,7 @@ func (h *SessionHandler) Chat(c *fiber.Ctx) error {
 				for _, k := range []string{
 					"gws_api_key", "gws_base_url", "gws_user_id", "gws_tenant_id",
 					"invoice_base_url", "invoice_api_key",
+					"telegram_base_url", "telegram_api_key",
 				} {
 					if v, ok := settings[k]; ok && v != "" {
 						integrationEnv[k] = v

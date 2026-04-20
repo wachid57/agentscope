@@ -96,6 +96,41 @@ func (h *SettingsHandler) TestGWS(c *fiber.Ctx) error {
 	})
 }
 
+// POST /api/settings/test-telegram
+func (h *SettingsHandler) TestTelegram(c *fiber.Ctx) error {
+	settings, err := db.GetAllSettings()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"ok": false, "message": "failed to load settings"})
+	}
+
+	baseURL := strings.TrimRight(settings["telegram_base_url"], "/")
+	if baseURL == "" {
+		return c.Status(400).JSON(fiber.Map{"ok": false, "message": "Telegram Base URL belum dikonfigurasi"})
+	}
+
+	client := &http.Client{Timeout: 8 * time.Second}
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/health", baseURL), nil)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"ok": false, "message": "invalid URL: " + err.Error()})
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return c.JSON(fiber.Map{"ok": false, "message": "Tidak dapat terhubung: " + err.Error()})
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return c.JSON(fiber.Map{"ok": false, "message": fmt.Sprintf("HTTP %d dari Telegram server", resp.StatusCode)})
+	}
+
+	apiKey := settings["telegram_api_key"]
+	if apiKey == "" {
+		return c.JSON(fiber.Map{"ok": true, "message": "Terhubung ke priva-telegram ✓ (API key belum diset)"})
+	}
+	return c.JSON(fiber.Map{"ok": true, "message": "Terhubung ke priva-telegram ✓"})
+}
+
 // POST /api/settings/test-invoice
 func (h *SettingsHandler) TestInvoice(c *fiber.Ctx) error {
 	settings, err := db.GetAllSettings()

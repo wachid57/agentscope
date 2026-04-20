@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Settings, Bell, Globe, Database, Trash2, Save, Webhook, Plug, CheckCircle2, XCircle, Loader2, FileText } from 'lucide-react'
+import { Settings, Bell, Globe, Database, Trash2, Save, Webhook, Plug, CheckCircle2, XCircle, Loader2, FileText, Send } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useSetNavSubtitle } from '../context/NavSubtitle'
 import { systemApi } from '../api/system'
@@ -18,6 +18,7 @@ export default function SettingsPage() {
 
   const [gws, setGws] = useState({ baseUrl: '', apiKey: '' })
   const [invoice, setInvoice] = useState({ baseUrl: '', apiKey: '' })
+  const [telegram, setTelegram] = useState({ baseUrl: '', apiKey: '' })
 
   useEffect(() => {
     setGws({
@@ -27,6 +28,10 @@ export default function SettingsPage() {
     setInvoice({
       baseUrl: dbSettings?.['invoice_base_url'] || localStorage.getItem('invoice_base_url') || '',
       apiKey:  dbSettings?.['invoice_api_key']  || localStorage.getItem('invoice_api_key')  || '',
+    })
+    setTelegram({
+      baseUrl: dbSettings?.['telegram_base_url'] || localStorage.getItem('telegram_base_url') || '',
+      apiKey:  dbSettings?.['telegram_api_key']  || localStorage.getItem('telegram_api_key')  || '',
     })
   }, [dbSettings])
 
@@ -58,6 +63,8 @@ export default function SettingsPage() {
   const [testMsg, setTestMsg] = useState('')
   const [invoiceTestStatus, setInvoiceTestStatus] = useState<TestStatus>('idle')
   const [invoiceTestMsg, setInvoiceTestMsg] = useState('')
+  const [telegramTestStatus, setTelegramTestStatus] = useState<TestStatus>('idle')
+  const [telegramTestMsg, setTelegramTestMsg] = useState('')
 
   const testConnection = async () => {
     const url = gws.baseUrl.trim()
@@ -100,6 +107,33 @@ export default function SettingsPage() {
     } catch {
       setInvoiceTestStatus('error')
       setInvoiceTestMsg('Gagal menghubungi backend')
+    }
+  }
+
+  const saveTelegram = (e: React.FormEvent) => {
+    e.preventDefault()
+    const url = telegram.baseUrl.trim()
+    const key = telegram.apiKey.trim()
+    localStorage.setItem('telegram_base_url', url)
+    localStorage.setItem('telegram_api_key', key)
+    toast.success('Telegram settings saved')
+    gwsMut.mutate({ telegram_base_url: url, telegram_api_key: key })
+  }
+
+  const testTelegramConnection = async () => {
+    const url = telegram.baseUrl.trim()
+    if (!url) { toast.error('Telegram Base URL belum diisi'); return }
+    setTelegramTestStatus('loading')
+    setTelegramTestMsg('')
+    try {
+      await systemApi.updateSettings({ telegram_base_url: url, telegram_api_key: telegram.apiKey.trim() })
+      const res = await fetch('/api/settings/test-telegram', { method: 'POST' })
+      const json = await res.json()
+      if (json.ok) { setTelegramTestStatus('ok'); setTelegramTestMsg(json.message) }
+      else { setTelegramTestStatus('error'); setTelegramTestMsg(json.message) }
+    } catch {
+      setTelegramTestStatus('error')
+      setTelegramTestMsg('Gagal menghubungi backend')
     }
   }
 
@@ -330,6 +364,67 @@ export default function SettingsPage() {
                 </button>
                 <button type="submit" className="btn-primary">
                   <Save size={14} /> Save Invoice Settings
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Telegram Integration */}
+          <div className="card">
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-elevated)' }}>
+                <Send size={15} className="text-brand-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Telegram Integration</h3>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>priva-telegram API untuk kirim pesan & file</p>
+              </div>
+            </div>
+            <form onSubmit={saveTelegram} className="space-y-4">
+              <div>
+                <label className="label">Telegram Base URL</label>
+                <input
+                  className="input font-mono"
+                  value={telegram.baseUrl}
+                  onChange={e => setTelegram(v => ({ ...v, baseUrl: e.target.value }))}
+                  placeholder="http://172.17.0.1:8080"
+                />
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>URL priva-telegram backend (port 8080)</p>
+              </div>
+              <div>
+                <label className="label">API Key</label>
+                <input
+                  className="input font-mono"
+                  type="password"
+                  value={telegram.apiKey}
+                  onChange={e => setTelegram(v => ({ ...v, apiKey: e.target.value }))}
+                  placeholder="API key dari priva-telegram"
+                />
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>API key terikat ke bot & tenant tertentu di priva-telegram</p>
+              </div>
+              {telegramTestStatus !== 'idle' && (
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
+                  telegramTestStatus === 'loading' ? 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                  : telegramTestStatus === 'ok'    ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400'
+                  :                                  'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400'
+                }`}>
+                  {telegramTestStatus === 'loading' && <Loader2 size={13} className="animate-spin shrink-0" />}
+                  {telegramTestStatus === 'ok'      && <CheckCircle2 size={13} className="shrink-0" />}
+                  {telegramTestStatus === 'error'   && <XCircle size={13} className="shrink-0" />}
+                  <span>{telegramTestStatus === 'loading' ? 'Menguji koneksi…' : telegramTestMsg}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  type="button"
+                  onClick={testTelegramConnection}
+                  disabled={telegramTestStatus === 'loading'}
+                  className="btn-outline flex items-center gap-2 text-sm"
+                >
+                  <Plug size={13} /> Test Connection
+                </button>
+                <button type="submit" className="btn-primary">
+                  <Save size={14} /> Save Telegram Settings
                 </button>
               </div>
             </form>

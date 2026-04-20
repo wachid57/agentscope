@@ -76,6 +76,7 @@ func main() {
 	api.Put("/settings", settingsH.UpdateSettings)
 	api.Post("/settings/test-gws", settingsH.TestGWS)
 	api.Post("/settings/test-invoice", settingsH.TestInvoice)
+	api.Post("/settings/test-telegram", settingsH.TestTelegram)
 	api.Post("/settings/test-scheduler/:id", settingsH.TestScheduler)
 
 	// Agents
