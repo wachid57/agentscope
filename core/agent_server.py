@@ -90,7 +90,15 @@ def build_model(model_cfg: dict) -> Any:
     api_key   = model_cfg.get("api_key") or os.environ.get(ENV_KEY_MAP.get(provider, ""), "")
     base_url  = model_cfg.get("base_url", "")
     stream    = model_cfg.get("stream", True)
-    max_tokens = model_cfg.get("max_tokens") or None
+    # Extract generation parameters
+    max_tokens = model_cfg.get("max_tokens")
+    temperature = model_cfg.get("temperature") or model_cfg.get("temp")
+
+    generate_args = {}
+    if max_tokens is not None:
+        generate_args["max_tokens"] = max_tokens
+    if temperature is not None:
+        generate_args["temperature"] = temperature
 
     if provider not in PROVIDER_MAP:
         raise ValueError(f"Unsupported provider: {provider}")
@@ -102,6 +110,9 @@ def build_model(model_cfg: dict) -> Any:
         "stream": stream,
     }
 
+    if generate_args:
+        kwargs["generate_args"] = generate_args
+
     if provider in ("openai", "openrouter", "deepseek"):
         if api_key:
             kwargs["api_key"] = api_key
@@ -112,14 +123,10 @@ def build_model(model_cfg: dict) -> Any:
             kwargs["client_args"] = {"base_url": base_url or DEEPSEEK_BASE}
         elif base_url:
             kwargs["client_args"] = {"base_url": base_url}
-        if max_tokens:
-            kwargs["generate_args"] = {"max_tokens": max_tokens}
 
     elif provider == "anthropic":
         if api_key:
             kwargs["api_key"] = api_key
-        if max_tokens:
-            kwargs["generate_args"] = {"max_tokens": max_tokens}
 
     elif provider == "dashscope":
         if api_key:

@@ -91,7 +91,9 @@ User: "Process invoice from /data/invoices/march.xlsx and send to Telegram chat 
 def build_agent(
     model_name: str = None,
     api_key: str = None,
-    api_base: str = None
+    api_base: str = None,
+    max_tokens: int = None,
+    temperature: float = None
 ) -> ReActAgent:
     """Build a fresh ReActAgent with invoice tools registered."""
     toolkit = Toolkit()
@@ -105,12 +107,22 @@ def build_agent(
     key = api_key or os.environ.get("OPENAI_API_KEY", "")
     base = api_base or os.environ.get("OPENAI_API_BASE", "https://openrouter.ai/api/v1")
 
+    generate_args = {}
+    if max_tokens:
+        generate_args["max_tokens"] = max_tokens
+    if temperature is not None:
+        generate_args["temperature"] = temperature
+
+    # Fallback to default if max_tokens not provided
+    if not generate_args.get("max_tokens"):
+        generate_args["max_tokens"] = 4000
+
     model = OpenAIChatModel(
         config_name="invoice-model",
         model_name=name,
         api_key=key,
         client_args={"base_url": base},
-        generate_args={"max_tokens": 4000},
+        generate_args=generate_args,
         stream=True,
     )
 
@@ -180,9 +192,11 @@ async def chat():
 
     # Extract dynamic config if provided
     config = data.get("config", {})
-    model_name = config.get("model_name")
-    api_key    = config.get("api_key")
-    api_base   = config.get("api_base")
+    model_name  = config.get("model_name")
+    api_key     = config.get("api_key")
+    api_base    = config.get("api_base")
+    max_tokens  = config.get("max_tokens")
+    temperature = config.get("temperature") or config.get("temp")
 
     if not user_input:
         return jsonify({"error": "user_input is required"}), 400
@@ -192,7 +206,9 @@ async def chat():
     agent = build_agent(
         model_name=model_name,
         api_key=api_key,
-        api_base=api_base
+        api_base=api_base,
+        max_tokens=max_tokens,
+        temperature=temperature
     )
 
     logger.info(f"Invoice agent chat — user: {user_id}, session: {session_id}")
