@@ -95,12 +95,22 @@ def build_model(model_cfg: dict) -> Any:
     temperature = model_cfg.get("temperature") or model_cfg.get("temp")
 
     generate_args = {}
-    print(f"DEBUG: model_cfg={model_cfg}")
+    # Use logger instead of print to ensure visibility in docker logs
+    logger.info(f"BUILD_MODEL: provider={provider}, model={model_name}, cfg_max_tokens={max_tokens}")
+    
+    # Force max_tokens to a safe default if missing or too high
+    safe_max_tokens = 4000
     if max_tokens is not None:
-        generate_args["max_tokens"] = max_tokens
-    print(f"DEBUG: Added max_tokens={max_tokens} to generate_args")
+        try:
+            safe_max_tokens = int(max_tokens)
+            if safe_max_tokens > 8000: safe_max_tokens = 8000
+        except: pass
+    
+    generate_args["max_tokens"] = safe_max_tokens
     if temperature is not None:
         generate_args["temperature"] = temperature
+    
+    logger.info(f"BUILD_MODEL: Final generate_args={generate_args}")
 
     if provider not in PROVIDER_MAP:
         raise ValueError(f"Unsupported provider: {provider}")
@@ -112,7 +122,7 @@ def build_model(model_cfg: dict) -> Any:
         "stream": stream,
     }
     if max_tokens is not None:
-        kwargs["max_tokens"] = max_tokens
+        kwargs["max_tokens"] = safe_max_tokens
     if temperature is not None:
         kwargs["temperature"] = temperature
 
