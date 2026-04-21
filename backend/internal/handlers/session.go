@@ -129,6 +129,7 @@ func (h *SessionHandler) Chat(c *fiber.Ctx) error {
 
 	c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
 		var assistantContent strings.Builder
+		var lastPythonError string
 
 		coreURL := h.agentscopeURL
 		coreAvailable := coreURL != "" && h.pingCore(coreURL)
@@ -142,6 +143,7 @@ func (h *SessionHandler) Chat(c *fiber.Ctx) error {
 					"gws_api_key", "gws_base_url", "gws_user_id", "gws_tenant_id",
 					"invoice_base_url", "invoice_api_key",
 					"telegram_base_url", "telegram_api_key",
+					"openrouter_api_key", "openai_api_key", "anthropic_api_key", "gemini_api_key", "deepseek_api_key",
 				} {
 					if v, ok := settings[k]; ok && v != "" {
 						integrationEnv[k] = v
@@ -193,6 +195,7 @@ func (h *SessionHandler) Chat(c *fiber.Ctx) error {
 						// Check for error from Python
 						if errMsg, ok := msgMap["error"].(string); ok {
 							h.store.AddLog(agentID, sess.ID, "error", errMsg)
+							lastPythonError = errMsg
 						}
 					}
 
@@ -205,7 +208,11 @@ func (h *SessionHandler) Chat(c *fiber.Ctx) error {
 
 				// If Python core returned nothing (e.g. rate limit / API error), send a readable error chunk
 				if assistantContent.Len() == 0 {
-					errContent := "⚠️ **Model tidak merespons.** Kemungkinan penyebab:\n- Rate limit model gratis (coba beberapa saat lagi)\n- API key tidak valid atau belum diset\n- Model sedang tidak tersedia\n\nCoba ganti model di konfigurasi agent, atau tambahkan API key OpenRouter."
+					errContent := "⚠️ **Model tidak merespons.** Kemungkinan penyebab:\n"
+					if lastPythonError != "" {
+						errContent += fmt.Sprintf("- **Error dari Provider:** %s\n", lastPythonError)
+					}
+					errContent += "- Rate limit model gratis (coba beberapa saat lagi)\n- API key tidak valid atau belum diset\n- Model sedang tidak tersedia\n\nCoba ganti model di konfigurasi agent, atau tambahkan API key OpenRouter di menu Settings."
 					assistantContent.WriteString(errContent)
 					errData, _ := json.Marshal(map[string]string{"content": errContent})
 					fmt.Fprintf(w, "data: %s\n\n", string(errData))

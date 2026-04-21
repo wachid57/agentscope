@@ -87,7 +87,7 @@ func (h *SystemHandler) ListModelProviders(c *fiber.Ctx) error {
 		{
 			"id":          "gemini",
 			"name":        "Google Gemini",
-			"models":      []string{"gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash", "gemini-pro"},
+			"models":      []string{"gemini-2.0-pro-exp-02-05", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash", "gemini-flash-1.5-8b", "gemini-pro"},
 			"env_key":     "GEMINI_API_KEY",
 			"description": "Google Gemini models",
 		},

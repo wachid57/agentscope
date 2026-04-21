@@ -430,6 +430,42 @@ export default function SettingsPage() {
             </form>
           </div>
 
+          {/* LLM Providers */}
+          <div className="card">
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--bg-elevated)" }}>
+                <Globe size={15} className="text-brand-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>LLM Providers</h3>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Global API keys for AI models</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              {[
+                { id: "openrouter_api_key", name: "OpenRouter API Key" },
+                { id: "openai_api_key",     name: "OpenAI API Key" },
+                { id: "anthropic_api_key",  name: "Anthropic API Key" },
+                { id: "gemini_api_key",     name: "Gemini API Key" },
+                { id: "deepseek_api_key",   name: "DeepSeek API Key" },
+              ].map(p => (
+                <div key={p.id}>
+                  <label className="label">{p.name}</label>
+                  <input
+                    type="password"
+                    className="input font-mono"
+                    placeholder="sk-..."
+                    value={dbSettings?.[p.id] || "" }
+                    onChange={e => gwsMut.mutate({ [p.id]: e.target.value })}
+                  />
+                </div>
+              ))}
+              <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                * Keys are saved automatically to the database when changed.
+              </p>
+            </div>
+          </div>
+
         </div>
 
         {/* ── Kolom kanan ── */}

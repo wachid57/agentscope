@@ -404,6 +404,11 @@ async def chat():
         "invoice_api_key":   "INVOICE_API_KEY",
         "telegram_base_url": "TELEGRAM_API_URL",
         "telegram_api_key":  "TELEGRAM_API_KEY",
+        "openai_api_key":     "OPENAI_API_KEY",
+        "anthropic_api_key":  "ANTHROPIC_API_KEY",
+        "gemini_api_key":     "GEMINI_API_KEY",
+        "openrouter_api_key": "OPENROUTER_API_KEY",
+        "deepseek_api_key":   "DEEPSEEK_API_KEY",
     }
     for cfg_key, env_key in env_map.items():
         val = integration_env.get(cfg_key, "")
