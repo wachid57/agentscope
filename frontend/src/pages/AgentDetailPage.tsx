@@ -61,7 +61,7 @@ export default function AgentDetailPage() {
   ]
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="p-8 max-w-screen-2xl mx-auto w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
       <div className="relative group">
         <div className="absolute -inset-4 bg-gradient-to-r from-brand-600/20 to-purple-600/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition duration-1000"></div>
@@ -217,34 +217,34 @@ export default function AgentDetailPage() {
           </div>
 
           {agent.tools?.length > 0 && (
-            <div className="col-span-full card border-slate-800/50 bg-slate-900/30">
+            <div className="col-span-full card border-slate-200 dark:border-slate-800/50 bg-white dark:bg-slate-900/30 shadow-sm dark:shadow-none">
               <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 rounded-lg bg-orange-500/10 text-orange-400">
+                <div className="p-2 rounded-lg bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400">
                   <Layers size={16} />
                 </div>
-                <h3 className="font-bold text-slate-200">Tools & Capabilities</h3>
+                <h3 className="font-bold text-slate-800 dark:text-slate-200">Tools & Capabilities</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {agent.tools.map(tool => (
                   <div key={tool.name} className={`group p-4 rounded-2xl border transition-all duration-300 ${
                     tool.enabled 
-                      ? 'border-brand-500/20 bg-brand-500/5 hover:bg-brand-500/10' 
-                      : 'border-slate-800 bg-slate-900/50 opacity-60'
+                      ? 'border-brand-200 dark:border-brand-500/20 bg-brand-50 dark:bg-brand-500/5 hover:bg-brand-100 dark:hover:bg-brand-500/10' 
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 opacity-60'
                   }`}>
                     <div className="flex items-start justify-between mb-2">
-                      <p className={`font-bold text-sm ${tool.enabled ? 'text-brand-300' : 'text-slate-400'}`}>
+                      <p className={`font-bold text-sm ${tool.enabled ? 'text-brand-700 dark:text-brand-300' : 'text-slate-500 dark:text-slate-400'}`}>
                         {tool.name}
                       </p>
-                      <div className={`w-2 h-2 rounded-full ${tool.enabled ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-700'}`}></div>
+                      <div className={`w-2 h-2 rounded-full ${tool.enabled ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
                     </div>
-                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-4">
+                    <p className="text-xs text-slate-600 dark:text-slate-500 line-clamp-2 leading-relaxed mb-4">
                       {tool.description}
                     </p>
                     <div className="flex items-center justify-between">
-                      <span className={`text-[10px] font-bold uppercase tracking-tighter ${tool.enabled ? 'text-emerald-400' : 'text-slate-600'}`}>
+                      <span className={`text-[10px] font-bold uppercase tracking-tighter ${tool.enabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-600'}`}>
                         {tool.enabled ? 'Status: Active' : 'Status: Inactive'}
                       </span>
-                      {tool.enabled && <div className="text-brand-500/40 group-hover:text-brand-500 transition-colors"><Terminal size={12} /></div>}
+                      {tool.enabled && <div className="text-brand-500/40 group-hover:text-brand-600 dark:group-hover:text-brand-500 transition-colors"><Terminal size={12} /></div>}
                     </div>
                   </div>
                 ))}
