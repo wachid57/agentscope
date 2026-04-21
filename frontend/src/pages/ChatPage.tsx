@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Send, Bot, User, Loader2, AlertTriangle, SquarePen, MessageSquare, Trash2, Clock, MoreHorizontal } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { formatDistanceToNow, format } from 'date-fns'
 import { agentsApi } from '../api/agents'
 import type { ChatMessage, Session } from '../types'
@@ -361,7 +362,10 @@ export default function ChatPage() {
                 <AgentAvatar />
                 <div className="flex-1 rounded-2xl rounded-tl-sm px-4 py-3 max-w-2xl"
                   style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                  <ReactMarkdown className="prose prose-sm max-w-none dark:prose-invert">
+                  <ReactMarkdown 
+                    className="prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:bg-slate-900 prose-pre:text-slate-100"
+                    remarkPlugins={[remarkGfm]}
+                  >
                     {streamingContent}
                   </ReactMarkdown>
                   <div className="flex gap-1 mt-2">
@@ -464,14 +468,15 @@ function MessageBubble({ msg, agentName }: { msg: ChatMessage; agentName: string
           <span>·</span>
           <span>{formatDistanceToNow(new Date(msg.timestamp))} yang lalu</span>
         </span>
-        <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}
-          style={isUser
-            ? { background: 'var(--brand-600, #2563eb)', color: '#fff' }
-            : { background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
+        <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${isUser ? 'rounded-tr-sm shadow-sm bg-gradient-to-br from-brand-600 to-brand-700 text-white' : 'rounded-tl-sm bg-white dark:bg-slate-800 text-primary border border-slate-200 dark:border-slate-700 shadow-sm'}`}
+          style={isUser ? {} : { color: 'var(--text-primary)' }}>
           {isUser ? (
             <p className="whitespace-pre-wrap">{msg.content}</p>
           ) : (
-            <ReactMarkdown className="prose prose-sm max-w-none dark:prose-invert">
+            <ReactMarkdown 
+              className="prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:bg-slate-900 prose-pre:text-slate-100"
+              remarkPlugins={[remarkGfm]}
+            >
               {msg.content}
             </ReactMarkdown>
           )}

@@ -169,6 +169,44 @@
     color: var(--text-muted);
     letter-spacing: 0.07em;
   }
+
+  /* ── Markdown / Prose Enhancements ────────────────── */
+  .prose {
+    @apply max-w-none;
+    color: var(--text-primary);
+  }
+  .prose :where(p):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+    @apply my-2;
+  }
+  .prose :where(table):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+    @apply w-full border-collapse text-xs my-4;
+    background-color: var(--bg-base);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  }
+  .prose :where(thead):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+    background-color: var(--bg-elevated);
+    border-bottom: 2px solid var(--border);
+  }
+  .prose :where(th):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+    @apply px-3 py-2 text-left font-semibold;
+    color: var(--text-secondary);
+  }
+  .prose :where(td):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+    @apply px-3 py-2 border-b;
+    border-color: var(--border);
+    color: var(--text-primary);
+  }
+  .prose :where(tr:last-child td):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+    @apply border-b-0;
+  }
+  .prose :where(tr:hover td):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+  .dark .prose :where(tr:hover td):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+    background-color: rgba(255, 255, 255, 0.02);
+  }
 }
 
 /* ── Animations ───────────────────────────────────────────────── */
