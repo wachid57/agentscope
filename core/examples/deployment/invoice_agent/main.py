@@ -106,11 +106,12 @@ def build_agent(
     base = api_base or os.environ.get("OPENAI_API_BASE", "https://openrouter.ai/api/v1")
 
     model = OpenAIChatModel(
+        config_name="invoice-model",
         model_name=name,
         api_key=key,
-        api_endpoint=base,
+        client_args={"base_url": base},
+        generate_args={"max_tokens": 4000},
         stream=True,
-        max_tokens=4096,
     )
 
     return ReActAgent(
