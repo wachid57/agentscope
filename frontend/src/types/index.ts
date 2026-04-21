@@ -11,7 +11,6 @@ export interface ModelConfig {
   stream: boolean
   max_tokens?: number
   temperature?: number
-  temp?: number
 }
 
 export interface ToolConfig {

@@ -340,8 +340,8 @@ export default function AgentFormModal({ agent, onClose }: Props) {
                   min="0"
                   max="2"
                   placeholder="0.7"
-                  value={form.model.temp ?? ''}
-                  onChange={e => setForm(f => ({ ...f, model: { ...f.model, temp: parseFloat(e.target.value) || undefined } as any }))}
+                  value={form.model.temperature ?? ''}
+                  onChange={e => setForm(f => ({ ...f, model: { ...f.model, temperature: parseFloat(e.target.value) || undefined } as any }))}
                 />
               </div>
               <div className="flex items-center gap-3">
