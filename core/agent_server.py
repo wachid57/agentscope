@@ -95,8 +95,10 @@ def build_model(model_cfg: dict) -> Any:
     temperature = model_cfg.get("temperature") or model_cfg.get("temp")
 
     generate_args = {}
+    print(f"DEBUG: model_cfg={model_cfg}")
     if max_tokens is not None:
         generate_args["max_tokens"] = max_tokens
+    print(f"DEBUG: Added max_tokens={max_tokens} to generate_args")
     if temperature is not None:
         generate_args["temperature"] = temperature
 
@@ -109,6 +111,10 @@ def build_model(model_cfg: dict) -> Any:
         "model_name": model_name,
         "stream": stream,
     }
+    if max_tokens is not None:
+        kwargs["max_tokens"] = max_tokens
+    if temperature is not None:
+        kwargs["temperature"] = temperature
 
     if generate_args:
         kwargs["generate_args"] = generate_args
