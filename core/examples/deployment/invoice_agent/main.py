@@ -100,6 +100,7 @@ def build_agent() -> ReActAgent:
         model_name=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
         api_key=os.environ.get("OPENAI_API_KEY", ""),
         stream=True,
+        max_tokens=4096,
     )
 
     return ReActAgent(
