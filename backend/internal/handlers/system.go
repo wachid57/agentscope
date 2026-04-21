@@ -103,10 +103,10 @@ func (h *SystemHandler) ListModelProviders(c *fiber.Ctx) error {
 			"name":        "OpenRouter",
 			"models": []string{
 					// ── Anthropic Claude (paid, reliable)
-					"anthropic/claude-opus-4.7",           // ✅ Tested working
-					"anthropic/claude-opus-4-6",           // ✅ Should work (same series)
-					"anthropic/claude-sonnet-4-6",         // ✅ Should work
-					"anthropic/claude-haiku-4-5-20251001", // ✅ Should work
+					"anthropic/claude-3.7-sonnet",          // ✅ Latest Sonnet
+					"anthropic/claude-opus-4",            // ✅ Latest Opus
+					"anthropic/claude-3.5-sonnet",        // ✅ Classic Stable
+					"anthropic/claude-3.5-haiku",         // ✅ Fast & Cheap
 					// ── OpenAI (paid)
 					"openai/gpt-4o",         // ✅ Should work
 					"openai/gpt-4-turbo",    // ✅ Should work
@@ -117,9 +117,10 @@ func (h *SystemHandler) ListModelProviders(c *fiber.Ctx) error {
 					"google/gemini-1.5-pro",       // ✅ Should work
 					"google/gemini-1.5-flash",     // ✅ Should work
 					// ── Alibaba Qwen (free & paid)
-					"qwen/qwen3-coder:free",    // ✅ TESTED WORKING (rate-limit sometimes)
-					"qwen/qwen3-6-plus",        // ✅ Paid, should work
-					"qwen/qwen3-5-122b-a10b",   // ✅ Paid, should work
+					"qwen/qwen3-coder:free",    // ✅ Free & Fast for coding
+					"qwen/qwen-plus",           // ✅ Stable Plus
+					"qwen/qwen-max",            // ✅ Most Powerful Qwen
+					"qwen/qwen3-32b",           // ✅ Newest Mid-size
 					// ── NVIDIA Nemotron (free)
 					"nvidia/nemotron-3-super-120b-a12b:free", // ✅ TESTED WORKING
 					"nvidia/nemotron-3-nano-30b-a3b:free",    // ✅ Free, reliable
