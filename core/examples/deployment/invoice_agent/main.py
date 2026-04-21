@@ -88,7 +88,11 @@ User: "Process invoice from /data/invoices/march.xlsx and send to Telegram chat 
 """
 
 
-def build_agent() -> ReActAgent:
+def build_agent(
+    model_name: str = None,
+    api_key: str = None,
+    api_base: str = None
+) -> ReActAgent:
     """Build a fresh ReActAgent with invoice tools registered."""
     toolkit = Toolkit()
     toolkit.register_tool_function(read_gws_sheet)
@@ -96,9 +100,15 @@ def build_agent() -> ReActAgent:
     toolkit.register_tool_function(create_invoice)
     toolkit.register_tool_function(send_telegram_message)
 
+    # Use parameters if provided, otherwise fallback to env or defaults
+    name = model_name or os.environ.get("OPENAI_MODEL", "anthropic/claude-3-5-sonnet:beta")
+    key = api_key or os.environ.get("OPENAI_API_KEY", "")
+    base = api_base or os.environ.get("OPENAI_API_BASE", "https://openrouter.ai/api/v1")
+
     model = OpenAIChatModel(
-        model_name=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
-        api_key=os.environ.get("OPENAI_API_KEY", ""),
+        model_name=name,
+        api_key=key,
+        api_endpoint=base,
         stream=True,
         max_tokens=4096,
     )
@@ -117,9 +127,9 @@ async def run_agent_stream(
     user_input: str,
     user_id: str,
     session_id: str,
+    agent: ReActAgent
 ) -> AsyncGenerator[str, None]:
     session = JSONSession(save_dir=SESSION_DIR)
-    agent   = build_agent()
 
     await session.load_session_state(
         session_id=f"{user_id}-{session_id}",
@@ -167,16 +177,28 @@ async def chat():
     user_id    = data.get("user_id", "anonymous")
     session_id = data.get("session_id", "")
 
+    # Extract dynamic config if provided
+    config = data.get("config", {})
+    model_name = config.get("model_name")
+    api_key    = config.get("api_key")
+    api_base   = config.get("api_base")
+
     if not user_input:
         return jsonify({"error": "user_input is required"}), 400
     if not session_id:
         return jsonify({"error": "session_id is required"}), 400
 
+    agent = build_agent(
+        model_name=model_name,
+        api_key=api_key,
+        api_base=api_base
+    )
+
     logger.info(f"Invoice agent chat — user: {user_id}, session: {session_id}")
 
     async def generate():
         try:
-            async for chunk in run_agent_stream(user_input, user_id, session_id):
+            async for chunk in run_agent_stream(user_input, user_id, session_id, agent):
                 yield chunk
         except Exception as e:
             logger.exception("Invoice agent error")

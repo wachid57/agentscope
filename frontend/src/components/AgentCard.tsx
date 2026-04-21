@@ -67,70 +67,70 @@ export default function AgentCard({ agent }: { agent: Agent }) {
   return (
     <>
     <div
-      className="card-hover flex flex-col group"
-      style={{ minHeight: 200 }}
+      className="glass-card flex flex-col group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-brand-500/10 border-white/5 hover:border-brand-500/30"
+      style={{ minHeight: 220 }}
     >
+      <div className="absolute top-0 right-0 p-8 -mr-6 -mt-6 opacity-[0.03] group-hover:opacity-[0.08] transition-all duration-500 text-brand-500">
+        <Bot size={80} />
+      </div>
+
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-4 min-w-0">
           <div className={clsx(
-            'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors',
+            'w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300 shadow-inner',
             isRunning
-              ? 'bg-emerald-50 dark:bg-emerald-900/20'
-              : 'bg-slate-100 dark:bg-slate-800',
+              ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30'
+              : 'bg-slate-800/50 text-slate-500 ring-1 ring-slate-700/50',
           )}>
-            <Bot size={16} className={isRunning ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'} />
+            <Bot size={22} className={clsx(isRunning && 'animate-pulse')} />
           </div>
           <div className="min-w-0">
             <h3
-              className="font-semibold text-sm truncate cursor-pointer hover:text-brand-600 transition-colors"
-              style={{ color: 'var(--text-primary)' }}
+              className="font-bold text-base truncate cursor-pointer hover:text-brand-400 transition-colors bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent"
               onClick={() => navigate(`/agents/${agent.id}`)}
             >
               {agent.name}
             </h3>
-            <div className="mt-0.5">
+            <div className="mt-1 flex items-center gap-2">
               <AgentTypeBadge type={agent.type} />
+              <div className={clsx('w-1.5 h-1.5 rounded-full', isRunning ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-600')}></div>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0 ml-2">
-          <StatusBadge status={agent.status} />
           <div className="relative">
             <button
-              className="p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-slate-100 dark:hover:bg-slate-800"
-              style={{ color: 'var(--text-muted)' }}
+              className="p-2 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-slate-200 transition-all border border-slate-700/30"
               onClick={() => setMenuOpen(m => !m)}
             >
-              <MoreHorizontal size={14} />
+              <MoreHorizontal size={16} />
             </button>
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
                 <div
-                  className="absolute right-0 top-7 z-20 w-40 rounded-xl shadow-dropdown border py-1.5 text-sm animate-in"
-                  style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
+                  className="absolute right-0 top-10 z-20 w-44 rounded-2xl shadow-2xl border border-slate-800 bg-slate-900/90 backdrop-blur-xl py-2 text-sm animate-in fade-in zoom-in-95 duration-200"
                 >
                   <button
-                    className="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 transition-colors"
-                    style={{ color: 'var(--text-secondary)' }}
+                    className="w-full text-left px-4 py-2 hover:bg-slate-800/50 flex items-center gap-3 transition-colors text-slate-300"
                     onClick={() => { setEditOpen(true); setMenuOpen(false) }}
                   >
-                    <Pencil size={12} /> Edit
+                    <Pencil size={14} className="text-slate-500" /> Edit Agent
                   </button>
                   <button
-                    className="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 transition-colors"
-                    style={{ color: 'var(--text-secondary)' }}
+                    className="w-full text-left px-4 py-2 hover:bg-slate-800/50 flex items-center gap-3 transition-colors text-slate-300"
                     onClick={() => { dupMut.mutate(); setMenuOpen(false) }}
                   >
-                    <Copy size={12} /> Duplicate
+                    <Copy size={14} className="text-slate-500" /> Duplicate
                   </button>
+                  <div className="my-1 border-t border-slate-800/50" />
                   <button
-                    className="w-full text-left px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-2.5 text-red-500 transition-colors"
+                    className="w-full text-left px-4 py-2 hover:bg-red-500/10 flex items-center gap-3 text-red-400 transition-colors"
                     onClick={() => { if (confirm('Delete this agent?')) { delMut.mutate(); setMenuOpen(false) } }}
                   >
-                    <Trash2 size={12} /> Delete
+                    <Trash2 size={14} /> Delete
                   </button>
                 </div>
               </>
@@ -141,37 +141,38 @@ export default function AgentCard({ agent }: { agent: Agent }) {
 
       {/* Description */}
       {agent.description && (
-        <p className="text-xs line-clamp-2 mb-3" style={{ color: 'var(--text-muted)' }}>
-          {agent.description}
+        <p className="text-xs text-slate-400 line-clamp-2 mb-4 leading-relaxed italic">
+          "{agent.description}"
         </p>
       )}
 
       {/* Tags */}
       {agent.tags && agent.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-3">
+        <div className="flex flex-wrap gap-1.5 mb-5">
           {agent.tags.map(t => (
-            <span key={t} className="badge-blue text-[10px] px-1.5 py-0.5">{t}</span>
+            <span key={t} className="px-2 py-0.5 rounded-lg bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[10px] font-bold uppercase tracking-wider">
+              {t}
+            </span>
           ))}
         </div>
       )}
 
       {/* Meta */}
-      <div className="mt-auto">
+      <div className="mt-auto space-y-5">
         <div
-          className="grid grid-cols-3 gap-2 py-3 mb-3 border-t border-b text-xs"
-          style={{ borderColor: 'var(--border)' }}
+          className="grid grid-cols-3 gap-3 py-4 border-t border-slate-800/50"
         >
           {[
             { label: 'Provider', value: agent.model.provider },
             { label: 'Memory',   value: agent.memory.type },
-            { label: 'Tools',    value: `${activeTools} active`, icon: Wrench },
+            { label: 'Tools',    value: activeTools, icon: Wrench },
           ].map(({ label, value, icon: Icon }) => (
-            <div key={label} className="flex flex-col gap-0.5">
-              <span className="text-[10px] uppercase tracking-wide font-medium" style={{ color: 'var(--text-muted)' }}>
+            <div key={label} className="flex flex-col gap-1">
+              <span className="text-[9px] uppercase tracking-widest font-black text-slate-600">
                 {label}
               </span>
-              <span className="flex items-center gap-1 font-medium truncate" style={{ color: 'var(--text-secondary)' }}>
-                {Icon && <Icon size={10} />}
+              <span className="flex items-center gap-1.5 font-bold text-[11px] text-slate-300 truncate">
+                {Icon && <Icon size={10} className="text-brand-500/70" />}
                 {value}
               </span>
             </div>
@@ -182,35 +183,34 @@ export default function AgentCard({ agent }: { agent: Agent }) {
         <div className="flex gap-2">
           {isRunning ? (
             <button
-              className="btn-danger flex-1 text-xs py-1.5 justify-center"
+              className="btn-danger flex-1 text-xs py-2 justify-center shadow-lg shadow-red-500/10"
               onClick={() => stopMut.mutate()}
               disabled={stopMut.isPending}
             >
-              <Square size={11} />
+              <Square size={12} fill="currentColor" />
               {stopMut.isPending ? 'Stopping…' : 'Stop'}
             </button>
           ) : (
             <button
-              className="btn-primary flex-1 text-xs py-1.5 justify-center"
+              className="btn-primary flex-1 text-xs py-2 justify-center shadow-lg shadow-brand-500/10"
               onClick={() => startMut.mutate()}
               disabled={startMut.isPending}
             >
-              <Play size={11} />
+              <Play size={12} fill="currentColor" />
               {startMut.isPending ? 'Starting…' : 'Start'}
             </button>
           )}
           <button
             className={clsx(
-              'btn flex-1 text-xs py-1.5 justify-center border',
+              'flex-1 text-xs py-2 rounded-xl flex items-center justify-center gap-2 transition-all font-bold',
               isRunning
-                ? 'border-brand-300 text-brand-600 hover:bg-brand-50 dark:border-brand-700 dark:text-brand-400 dark:hover:bg-brand-900/20'
-                : 'border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-50',
+                ? 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700/50'
+                : 'bg-slate-900/50 text-slate-700 border border-slate-800 cursor-not-allowed',
             )}
-            style={{ background: 'transparent' }}
             onClick={() => navigate(`/agents/${agent.id}/chat`)}
             disabled={!isRunning}
           >
-            <MessageSquare size={11} /> Chat
+            <MessageSquare size={12} /> Chat
           </button>
         </div>
       </div>
