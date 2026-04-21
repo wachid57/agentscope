@@ -76,6 +76,8 @@ function ApiDisabledBadge({ url }: { url: string }) {
   )
 }
 
+const DEFAULT_TRIGGER_MESSAGE = '[AUTO TRIGGER] File Google Sheets berubah. Spreadsheet ID: {{spreadsheet_id}}, Range: {{range}}.\nTolong baca data terbaru dari sheet tersebut dan proses sesuai tugasmu.'
+
 // ── Modal Form (create & edit) ────────────────────────────────────────────────
 type TestResult = { ok: boolean; message: string } | null
 
@@ -85,7 +87,12 @@ function SchedulerModal({ initial, onClose, onSave, saving }: {
   onSave: (id: string | undefined, data: CreateSchedulerPayload) => void
   saving: boolean
 }) {
-  const [form, setForm] = useState<CreateSchedulerPayload>({ ...initial, trigger_type: initial.trigger_type ?? 'webhook', agent_id: initial.agent_id ?? '', trigger_message: initial.trigger_message ?? '' })
+  const [form, setForm] = useState<CreateSchedulerPayload>({
+    ...initial,
+    trigger_type: initial.trigger_type ?? 'webhook',
+    agent_id: initial.agent_id ?? '',
+    trigger_message: initial.trigger_message || DEFAULT_TRIGGER_MESSAGE
+  })
   const [testResult, setTestResult] = useState<TestResult>(null)
   const [testing, setTesting] = useState(false)
   const set = (k: keyof CreateSchedulerPayload, v: unknown) => setForm(f => ({ ...f, [k]: v }))
