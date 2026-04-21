@@ -65,23 +65,23 @@ export default function AgentDetailPage() {
       {/* Header */}
       <div className="relative group">
         <div className="absolute -inset-4 bg-gradient-to-r from-brand-600/20 to-purple-600/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition duration-1000"></div>
-        <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6 glass-card border-white/10">
+        <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6 glass-card border-slate-200 dark:border-white/10">
           <div className="flex items-center gap-5">
             <button 
-              className="p-3 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 transition-all active:scale-95 border border-slate-700/50"
+              className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700/50 text-slate-500 dark:text-slate-300 transition-all active:scale-95 border border-slate-200 dark:border-slate-700/50"
               onClick={() => navigate('/agents')}
             >
               <ArrowLeft size={20} />
             </button>
             <div>
               <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold tracking-tight text-slate-800 dark:text-white">
                   {agent.name}
                 </h1>
                 <StatusBadge status={agent.status} />
               </div>
-              <p className="text-slate-400 text-sm mt-1.5 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1.5 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
                 {agent.description || agent.type}
               </p>
             </div>
@@ -119,15 +119,15 @@ export default function AgentDetailPage() {
           { label: 'Total Messages', value: stats?.total_messages ?? 0, icon: <Layers size={18} />, color: 'purple' },
           { label: 'Tools Active', value: agent.tools?.filter(t => t.enabled).length ?? 0, icon: <Terminal size={18} />, color: 'orange' },
         ].map(s => (
-          <div key={s.label} className="stat-card p-6 border-slate-800 group overflow-hidden">
+          <div key={s.label} className="stat-card p-6 border-slate-200 dark:border-slate-800 group overflow-hidden">
             <div className={`absolute top-0 right-0 p-8 -mr-4 -mt-4 opacity-[0.03] group-hover:opacity-[0.08] transition-all duration-500 text-${s.color}-500`}>
               {s.icon}
             </div>
-            <div className={`w-10 h-10 rounded-xl bg-${s.color}-500/10 flex items-center justify-center text-${s.color}-400 mb-4`}>
+            <div className={`w-10 h-10 rounded-xl bg-${s.color}-50 dark:bg-${s.color}-500/10 flex items-center justify-center text-${s.color}-600 dark:text-${s.color}-400 mb-4`}>
               {s.icon}
             </div>
             <div className="text-center md:text-left w-full">
-              <p className="text-2xl font-bold text-white mb-1">{s.value}</p>
+              <p className="text-2xl font-bold text-slate-800 dark:text-white mb-1">{s.value}</p>
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{s.label}</p>
             </div>
           </div>
@@ -135,7 +135,7 @@ export default function AgentDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 p-1.5 bg-slate-900/50 rounded-2xl border border-slate-800 w-fit">
+      <div className="flex gap-2 p-1.5 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 w-fit">
         {tabs.map(t => (
           <button
             key={t.id}
@@ -143,7 +143,7 @@ export default function AgentDetailPage() {
             className={`flex items-center gap-2.5 px-6 py-2.5 text-sm font-semibold rounded-xl transition-all duration-300 ${
               tab === t.id
                 ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20'
-                : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
+                : 'text-slate-500 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50'
             }`}
           >
             {t.icon} {t.label}
@@ -155,12 +155,12 @@ export default function AgentDetailPage() {
       {tab === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 space-y-6">
-            <div className="card border-slate-800/50 bg-slate-900/40">
+            <div className="card border-slate-200 dark:border-slate-800/50 bg-white dark:bg-slate-900/40">
               <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 rounded-lg bg-brand-500/10 text-brand-400">
+                <div className="p-2 rounded-lg bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400">
                   <Activity size={16} />
                 </div>
-                <h3 className="font-bold text-slate-200">Configuration</h3>
+                <h3 className="font-bold text-slate-800 dark:text-slate-200">Configuration</h3>
               </div>
               <div className="space-y-4">
                 {[
@@ -171,9 +171,9 @@ export default function AgentDetailPage() {
                   { label: 'Memory', value: agent.memory.type },
                   { label: 'Created', value: `${formatDistanceToNow(new Date(agent.created_at))} ago` },
                 ].map((item, idx) => (
-                  <div key={idx} className="flex flex-col gap-1 py-1 border-b border-slate-800/50 last:border-0">
-                    <dt className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{item.label}</dt>
-                    <dd className={`text-sm text-slate-300 ${item.mono ? 'font-mono text-xs' : ''}`}>{item.value}</dd>
+                  <div key={idx} className="flex flex-col gap-1 py-1 border-b border-slate-100 dark:border-slate-800/50 last:border-0">
+                    <dt className="text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 font-bold">{item.label}</dt>
+                    <dd className={`text-sm text-slate-700 dark:text-slate-300 ${item.mono ? 'font-mono text-xs' : ''}`}>{item.value}</dd>
                   </div>
                 ))}
               </div>
@@ -194,22 +194,22 @@ export default function AgentDetailPage() {
           </div>
 
           <div className="lg:col-span-2 space-y-6">
-            <div className="card border-slate-800/50 bg-slate-950/40 min-h-[300px] flex flex-col">
+            <div className="card border-slate-200 dark:border-slate-800/50 bg-slate-50 dark:bg-slate-950/40 min-h-[300px] flex flex-col">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
+                  <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400">
                     <Terminal size={16} />
                   </div>
-                  <h3 className="font-bold text-slate-200">System Prompt</h3>
+                  <h3 className="font-bold text-slate-800 dark:text-slate-200">System Prompt</h3>
                 </div>
                 <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/40"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/40"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/40"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-400 dark:bg-red-500/40"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 dark:bg-yellow-500/40"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 dark:bg-emerald-500/40"></div>
                 </div>
               </div>
-              <div className="relative flex-1 bg-slate-950/80 rounded-xl border border-slate-800 overflow-hidden">
-                <pre className="p-5 text-xs text-slate-300 whitespace-pre-wrap font-mono leading-relaxed max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-800">
+              <div className="relative flex-1 bg-white dark:bg-slate-950/80 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-inner">
+                <pre className="p-5 text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap font-mono leading-relaxed max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-800">
                   {agent.sys_prompt}
                 </pre>
               </div>

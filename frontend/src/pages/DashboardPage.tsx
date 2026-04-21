@@ -88,11 +88,11 @@ export default function DashboardPage() {
         <div className="xl:col-span-2 glass-card flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-brand-500/10 text-brand-400">
+              <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400">
                 <Bot size={20} />
               </div>
               <div>
-                <h2 className="font-bold text-lg text-white">Recent Agents</h2>
+                <h2 className="font-bold text-lg text-slate-800 dark:text-white">Recent Agents</h2>
                 <p className="text-xs text-slate-500 font-medium">
                   {agents.length} agent{agents.length !== 1 ? 's' : ''} currently configured
                 </p>
@@ -100,7 +100,7 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={() => navigate('/agents')}
-              className="px-4 py-2 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 text-xs font-bold transition-all flex items-center gap-2 border border-slate-700/50"
+              className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-600 dark:text-slate-300 text-xs font-bold transition-all flex items-center gap-2 border border-slate-200 dark:border-slate-700/50"
             >
               View Repository <ArrowRight size={14} />
             </button>
@@ -111,14 +111,14 @@ export default function DashboardPage() {
               <div
                 key={a.id}
                 onClick={() => navigate(`/agents/${a.id}`)}
-                className="group flex items-center justify-between p-4 rounded-2xl border border-slate-800 hover:border-brand-500/30 hover:bg-brand-500/5 cursor-pointer transition-all duration-300"
+                className="group flex items-center justify-between p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-brand-500/30 hover:bg-brand-50 dark:hover:bg-brand-500/5 cursor-pointer transition-all duration-300"
               >
                 <div className="flex items-center gap-4 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-slate-800/50 flex items-center justify-center shrink-0 group-hover:bg-brand-500/10 transition-colors">
-                    <Bot size={18} className="text-slate-500 group-hover:text-brand-400 transition-colors" />
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center shrink-0 group-hover:bg-brand-100 dark:group-hover:bg-brand-500/10 transition-colors">
+                    <Bot size={18} className="text-slate-500 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-200 group-hover:text-white transition-colors truncate">
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-brand-600 dark:group-hover:text-white transition-colors truncate">
                       {a.name}
                     </p>
                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter mt-0.5">
@@ -134,10 +134,10 @@ export default function DashboardPage() {
 
             {agents.length === 0 && (
               <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-16 h-16 rounded-3xl bg-slate-800/30 flex items-center justify-center mb-5 border border-slate-800">
-                  <Bot size={28} className="text-slate-600" />
+                <div className="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-slate-800/30 flex items-center justify-center mb-5 border border-slate-200 dark:border-slate-800">
+                  <Bot size={28} className="text-slate-400 dark:text-slate-600" />
                 </div>
-                <p className="text-base font-bold text-slate-300 mb-1">No agents found</p>
+                <p className="text-base font-bold text-slate-700 dark:text-slate-300 mb-1">No agents found</p>
                 <p className="text-xs text-slate-500 mb-6">Start by creating your first intelligent agent</p>
                 <button className="btn-primary" onClick={() => navigate('/agents')}>
                   <Bot size={16} /> Create Your First Agent
@@ -152,9 +152,9 @@ export default function DashboardPage() {
 
           {/* System Info */}
           <div className="glass-card">
-            <div className="flex items-center gap-2 mb-6 text-brand-400">
+            <div className="flex items-center gap-2 mb-6 text-brand-600 dark:text-brand-400">
               <Activity size={18} />
-              <h2 className="font-bold text-slate-200">System Monitoring</h2>
+              <h2 className="font-bold text-slate-800 dark:text-slate-200">System Monitoring</h2>
             </div>
             <div className="space-y-4">
               {[
@@ -162,11 +162,11 @@ export default function DashboardPage() {
                 { icon: Cpu,       label: 'Goroutines', value: overview?.system.goroutines ?? '—', color: 'emerald' },
                 { icon: MemoryStick, label: 'Mem Usage',   value: overview?.system.mem_alloc_mb ? `${overview.system.mem_alloc_mb} MB` : '—', color: 'purple' },
               ].map(({ icon: Icon, label, value, color }) => (
-                <div key={label} className="flex items-center justify-between p-3 rounded-xl bg-slate-950/40 border border-slate-800/50">
+                <div key={label} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/50">
                   <span className="flex items-center gap-2.5 text-xs font-bold text-slate-500 uppercase tracking-widest">
                     <Icon size={14} className={`text-${color}-500`} /> {label}
                   </span>
-                  <span className="text-xs font-black text-slate-200 font-mono">
+                  <span className="text-xs font-black text-slate-700 dark:text-slate-200 font-mono">
                     {String(value)}
                   </span>
                 </div>
@@ -175,19 +175,19 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Actions */}
-          <div className="glass-card bg-gradient-to-br from-brand-600/10 to-purple-600/10">
-            <h2 className="font-bold text-slate-200 mb-6 flex items-center gap-2">
-              <Layers size={18} className="text-purple-400" />
+          <div className="glass-card bg-gradient-to-br from-brand-50 to-purple-50 dark:from-brand-600/10 dark:to-purple-600/10">
+            <h2 className="font-bold text-slate-800 dark:text-slate-200 mb-6 flex items-center gap-2">
+              <Layers size={18} className="text-purple-600 dark:text-purple-400" />
               Quick Operations
             </h2>
             <div className="space-y-3">
               <button className="btn-primary w-full shadow-brand-500/20" onClick={() => navigate('/agents')}>
                 <Bot size={16} /> Manage Agents
               </button>
-              <button className="btn-secondary w-full" onClick={() => navigate('/tools')}>
+              <button className="btn-outline w-full bg-white dark:bg-transparent" onClick={() => navigate('/tools')}>
                 <Wrench size={16} className="text-slate-500" /> Infrastructure Tools
               </button>
-              <button className="btn-ghost w-full bg-slate-800/30 border border-slate-700/30" onClick={() => navigate('/system/resources')}>
+              <button className="btn-ghost w-full bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700/30 hover:bg-slate-100 dark:hover:bg-slate-800/50" onClick={() => navigate('/system/resources')}>
                 <Activity size={16} /> Resource Monitoring
               </button>
             </div>

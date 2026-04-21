@@ -80,21 +80,21 @@ export default function AgentCard({ agent }: { agent: Agent }) {
           <div className={clsx(
             'w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300 shadow-inner',
             isRunning
-              ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30'
-              : 'bg-slate-800/50 text-slate-500 ring-1 ring-slate-700/50',
+              ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30'
+              : 'bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 ring-1 ring-slate-200 dark:ring-slate-700/50',
           )}>
             <Bot size={22} className={clsx(isRunning && 'animate-pulse')} />
           </div>
           <div className="min-w-0">
             <h3
-              className="font-bold text-base truncate cursor-pointer hover:text-brand-400 transition-colors bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent"
+              className="font-bold text-base truncate cursor-pointer text-slate-800 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
               onClick={() => navigate(`/agents/${agent.id}`)}
             >
               {agent.name}
             </h3>
             <div className="mt-1 flex items-center gap-2">
               <AgentTypeBadge type={agent.type} />
-              <div className={clsx('w-1.5 h-1.5 rounded-full', isRunning ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-600')}></div>
+              <div className={clsx('w-1.5 h-1.5 rounded-full', isRunning ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-300 dark:bg-slate-600')}></div>
             </div>
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function AgentCard({ agent }: { agent: Agent }) {
         <div className="flex items-center gap-1.5 shrink-0 ml-2">
           <div className="relative">
             <button
-              className="p-2 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 text-slate-400 hover:text-slate-200 transition-all border border-slate-700/30"
+              className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all border border-slate-200 dark:border-slate-700/30"
               onClick={() => setMenuOpen(m => !m)}
             >
               <MoreHorizontal size={16} />
@@ -111,23 +111,23 @@ export default function AgentCard({ agent }: { agent: Agent }) {
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
                 <div
-                  className="absolute right-0 top-10 z-20 w-44 rounded-2xl shadow-2xl border border-slate-800 bg-slate-900/90 backdrop-blur-xl py-2 text-sm animate-in fade-in zoom-in-95 duration-200"
+                  className="absolute right-0 top-10 z-20 w-44 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl py-2 text-sm animate-in fade-in zoom-in-95 duration-200"
                 >
                   <button
-                    className="w-full text-left px-4 py-2 hover:bg-slate-800/50 flex items-center gap-3 transition-colors text-slate-300"
+                    className="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-300"
                     onClick={() => { setEditOpen(true); setMenuOpen(false) }}
                   >
-                    <Pencil size={14} className="text-slate-500" /> Edit Agent
+                    <Pencil size={14} className="text-slate-400 dark:text-slate-500" /> Edit Agent
                   </button>
                   <button
-                    className="w-full text-left px-4 py-2 hover:bg-slate-800/50 flex items-center gap-3 transition-colors text-slate-300"
+                    className="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-300"
                     onClick={() => { dupMut.mutate(); setMenuOpen(false) }}
                   >
-                    <Copy size={14} className="text-slate-500" /> Duplicate
+                    <Copy size={14} className="text-slate-400 dark:text-slate-500" /> Duplicate
                   </button>
-                  <div className="my-1 border-t border-slate-800/50" />
+                  <div className="my-1 border-t border-slate-100 dark:border-slate-800/50" />
                   <button
-                    className="w-full text-left px-4 py-2 hover:bg-red-500/10 flex items-center gap-3 text-red-400 transition-colors"
+                    className="w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center gap-3 text-red-500 dark:text-red-400 transition-colors"
                     onClick={() => { if (confirm('Delete this agent?')) { delMut.mutate(); setMenuOpen(false) } }}
                   >
                     <Trash2 size={14} /> Delete
@@ -141,7 +141,7 @@ export default function AgentCard({ agent }: { agent: Agent }) {
 
       {/* Description */}
       {agent.description && (
-        <p className="text-xs text-slate-400 line-clamp-2 mb-4 leading-relaxed italic">
+        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 leading-relaxed italic">
           "{agent.description}"
         </p>
       )}
@@ -160,7 +160,7 @@ export default function AgentCard({ agent }: { agent: Agent }) {
       {/* Meta */}
       <div className="mt-auto space-y-5">
         <div
-          className="grid grid-cols-3 gap-3 py-4 border-t border-slate-800/50"
+          className="grid grid-cols-3 gap-3 py-4 border-t border-slate-200 dark:border-slate-800/50"
         >
           {[
             { label: 'Provider', value: agent.model.provider },
@@ -168,10 +168,10 @@ export default function AgentCard({ agent }: { agent: Agent }) {
             { label: 'Tools',    value: activeTools, icon: Wrench },
           ].map(({ label, value, icon: Icon }) => (
             <div key={label} className="flex flex-col gap-1">
-              <span className="text-[9px] uppercase tracking-widest font-black text-slate-600">
+              <span className="text-[9px] uppercase tracking-widest font-black text-slate-400 dark:text-slate-600">
                 {label}
               </span>
-              <span className="flex items-center gap-1.5 font-bold text-[11px] text-slate-300 truncate">
+              <span className="flex items-center gap-1.5 font-bold text-[11px] text-slate-700 dark:text-slate-300 truncate">
                 {Icon && <Icon size={10} className="text-brand-500/70" />}
                 {value}
               </span>
@@ -204,8 +204,8 @@ export default function AgentCard({ agent }: { agent: Agent }) {
             className={clsx(
               'flex-1 text-xs py-2 rounded-xl flex items-center justify-center gap-2 transition-all font-bold',
               isRunning
-                ? 'bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700/50'
-                : 'bg-slate-900/50 text-slate-700 border border-slate-800 cursor-not-allowed',
+                ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700/50'
+                : 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-700 border border-slate-200 dark:border-slate-800 cursor-not-allowed',
             )}
             onClick={() => navigate(`/agents/${agent.id}/chat`)}
             disabled={!isRunning}
