@@ -64,4 +64,4 @@ Setelah berhasil dijalankan, layanan dapat diakses di:
 - Pastikan volume Docker terpasang dengan benar untuk persistensi data sesi agen.
 
 ---
-Dikembangkan dengan ❤️ untuk efisiensi agen AI.
+Dikembangkan oleh **Priva AI**

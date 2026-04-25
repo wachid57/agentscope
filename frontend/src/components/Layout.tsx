@@ -181,7 +181,7 @@ export default function Layout() {
     queryFn: systemApi.getSettings,
   })
 
-  const siteName = settings?.site_name || 'AgentScope Manager'
+  const siteName = settings?.site_name || 'Priva AI'
 
   const toggleGroup = (key: string) =>
     setOpenGroups(prev => {
@@ -326,7 +326,7 @@ export default function Layout() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Admin</p>
-                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>admin@agentscope.io</p>
+                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>admin@priva.ai</p>
                       </div>
                     </div>
                   </div>
