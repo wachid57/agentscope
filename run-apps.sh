@@ -58,9 +58,8 @@ cmd_up() {
     $COMPOSE up -d "$@"
     echo ""
     log "Services started:"
-    log "  Frontend  → http://localhost:3030"
-    log "  API       → http://localhost:8088"
-    log "  Jaeger UI → http://localhost:16686"
+    log "  Frontend  → http://localhost:${FRONTEND_PORT_EXPOSE:-3030}"
+    [[ -n "${BACKEND_PORT_EXPOSE:-}" ]] && log "  API (Host)→ http://localhost:${BACKEND_PORT_EXPOSE}"
     echo ""
     log "Use './run-apps.sh logs' to tail logs."
 }
@@ -83,9 +82,8 @@ cmd_status() {
     $COMPOSE ps
     echo ""
     echo -e "${CYAN}Access URLs:${NC}"
-    echo "  Frontend  → http://localhost:3030"
-    echo "  API       → http://localhost:8088"
-    echo "  Jaeger UI → http://localhost:16686"
+    echo "  Frontend  → http://localhost:${FRONTEND_PORT_EXPOSE:-3030}"
+    [[ -n "${BACKEND_PORT_EXPOSE:-}" ]] && echo "  API (Host)→ http://localhost:${BACKEND_PORT_EXPOSE}"
 }
 
 cmd_shell() {
@@ -149,8 +147,8 @@ cmd_rebuild() {
     fi
     echo ""
     log "Rebuild complete."
-    log "  Frontend  → http://localhost:3030"
-    log "  API       → http://localhost:8088"
+    log "  Frontend  → http://localhost:${FRONTEND_PORT_EXPOSE:-3030}"
+    [[ -n "${BACKEND_PORT_EXPOSE:-}" ]] && log "  API (Host)→ http://localhost:${BACKEND_PORT_EXPOSE}"
 }
 
 cmd_web_logs() {
@@ -234,6 +232,12 @@ usage() {
 main() {
     check_deps
     ensure_env
+    # Load env vars for script logic (e.g. BACKEND_PORT_EXPOSE)
+    if [[ -f "$ENV_FILE" ]]; then
+        set -a
+        source "$ENV_FILE"
+        set +a
+    fi
 
     local cmd="${1:-help}"
     shift || true

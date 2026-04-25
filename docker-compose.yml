@@ -78,7 +78,8 @@ services:
     container_name: priva-agent-backend
     restart: unless-stopped
     ports:
-      - "8088:8080"
+      # Hanya expose ke host jika BACKEND_PORT_EXPOSE di-set di .env (default: jangan expose)
+      - "${BACKEND_PORT_EXPOSE:-127.0.0.1:8088}:8080"
     environment:
       - PORT=8080
       - DATA_DIR=/app/data
@@ -109,7 +110,7 @@ services:
     container_name: priva-agent-frontend
     restart: unless-stopped
     ports:
-      - "3030:80"
+      - "${FRONTEND_PORT_EXPOSE:-3030}:80"
     networks:
       - priva-agent-net
     healthcheck:
@@ -140,6 +141,7 @@ services:
 
   # Optional: Jaeger for OpenTelemetry tracing
   jaeger:
+    profiles: ["debug"]
     image: jaegertracing/all-in-one:latest
     container_name: priva-agent-jaeger
     restart: unless-stopped
